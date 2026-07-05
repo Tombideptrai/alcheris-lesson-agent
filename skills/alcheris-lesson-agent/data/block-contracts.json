@@ -1,0 +1,192 @@
+{
+  "version": "1.0.0",
+  "description": "Machine-readable source of truth for Alcheris interactive blocks, mobile behavior, and learning beats. Human docs (references/*.md) and the native in-app agent prompt both derive from this file. Shapes verified against the frontend renderer/widget code.",
+  "generated_from": [
+    "frontend/src/features/block/BlockRenderer.jsx",
+    "frontend/src/features/block/interactionblock/modes/*.jsx",
+    "frontend/src/features/block/illustrationblock/illustrationUtils.js",
+    "frontend/src/features/block/comparisonblock/ComparisonRenderer.jsx",
+    "frontend/src/features/block/canvasblock/CanvasRenderer.jsx",
+    "frontend/src/features/player/mobileLearningBeats.js"
+  ],
+  "engagement_patterns": [
+    "Reveal before explain: let the learner uncover the trend or curve first, then teach it.",
+    "Manipulate before tell: let the learner move a slider and form a hypothesis before stating the rule.",
+    "Watch before summarize: play the transformation, then state the takeaway."
+  ],
+  "interactive_first_rules": [
+    { "signal": "data changes over time", "use": "interaction.graph", "instead_of": "static image chart" },
+    { "signal": "spread / average / variance / parameter concept", "use": "interaction.distribution", "instead_of": "static curve image plus prose" },
+    { "signal": "a function or 'what if we change X'", "use": "interaction.equation", "instead_of": "static formula plus one example" },
+    { "signal": "a process or transformation to watch", "use": "illustration", "instead_of": "a bullet list of steps" },
+    { "signal": "a before/after change is the point", "use": "comparison", "instead_of": "two stacked images or blocks" },
+    { "signal": "a diagram built step by step", "use": "canvas", "instead_of": "one finished diagram image" },
+    { "signal": "concepts and their relationships", "use": "mindmap", "instead_of": "a flat list" }
+  ],
+  "blocks": {
+    "interaction": {
+      "engagement": "interactive",
+      "mobile_behavior": "full",
+      "mode_field": "content.mode",
+      "modes": {
+        "graph": {
+          "purpose": "Animated line graph; a slider progressively reveals data points so the learner uncovers the trend.",
+          "prefer_over": "A static image chart whenever data changes across time and the learner should notice the movement.",
+          "content_schema": {
+            "mode": "graph",
+            "graphTitle": "string",
+            "xAxisLabel": "string",
+            "yAxisLabel": "string",
+            "showFullGraph": "boolean (true shows the whole line at once; use for reference/model pages)",
+            "graphData": "array of { id:string, label:string (x tick), value:number (y), annotation?:string }"
+          },
+          "example": {
+            "mode": "graph",
+            "graphTitle": "UK telephone calls by category, 1995-2002",
+            "xAxisLabel": "Year",
+            "yAxisLabel": "Billions of minutes",
+            "showFullGraph": false,
+            "graphData": [
+              { "id": "p1", "label": "1995", "value": 70 },
+              { "id": "p2", "label": "1999", "value": 90, "annotation": "Peak" },
+              { "id": "p3", "label": "2002", "value": 70 }
+            ]
+          },
+          "cautions": ["Do not put the answer in annotation on a point shown before a quiz about it."]
+        },
+        "distribution": {
+          "purpose": "Live normal-distribution curve reshaped by mean and standard-deviation sliders.",
+          "prefer_over": "A static curve image plus prose when teaching spread, averages, or variance.",
+          "content_schema": {
+            "mode": "distribution",
+            "statTitle": "string",
+            "statInstruction": "string",
+            "statMean": "number",
+            "statStdDev": "number",
+            "allowStudentInteraction": "boolean (false locks the sliders to teacher-set values)"
+          },
+          "example": {
+            "mode": "distribution",
+            "statTitle": "How spread changes the curve",
+            "statInstruction": "Drag the sliders to see how mean and standard deviation reshape the data.",
+            "statMean": 50,
+            "statStdDev": 10,
+            "allowStudentInteraction": true
+          }
+        },
+        "equation": {
+          "purpose": "Function grapher from an editable expression with variable sliders; gameMode makes a match-the-curve puzzle.",
+          "prefer_over": "A static formula and single example when teaching functions, transformations, or parameters.",
+          "content_schema": {
+            "mode": "equation",
+            "mathExpression": "string, e.g. 'a * x^2 + b'",
+            "mathA": "number", "mathB": "number", "mathC": "number",
+            "mathXMin": "number", "mathXMax": "number", "mathYMin": "number", "mathYMax": "number",
+            "mathAllowUserEdit": "boolean (false locks the expression)",
+            "showLinkedTable": "boolean (show synced numeric X/Y table)",
+            "gameMode": "boolean",
+            "targets": "array of { x:number, y:number } (puzzle target points when gameMode is true)"
+          },
+          "example": {
+            "mode": "equation",
+            "mathExpression": "a * x^2 + b",
+            "mathA": 1, "mathB": 0, "mathC": 0,
+            "mathXMin": -10, "mathXMax": 10, "mathYMin": -10, "mathYMax": 10,
+            "mathAllowUserEdit": true,
+            "showLinkedTable": true,
+            "gameMode": false,
+            "targets": [ { "x": -5, "y": 5 }, { "x": 0, "y": 0 }, { "x": 5, "y": 5 } ]
+          }
+        },
+        "embed": {
+          "purpose": "External interactive web resource inside the interaction frame.",
+          "content_schema": { "mode": "embed", "embedUrl": "string" }
+        }
+      }
+    },
+    "illustration": {
+      "engagement": "interactive",
+      "mobile_behavior": "viewer",
+      "purpose": "Keyframed multi-scene visual explanation; scenes auto-play and auto-advance. Use when a process or transformation is best shown in motion.",
+      "prefer_over": "A bullet list of steps when motion or staged reveal is the teaching object.",
+      "content_schema": {
+        "version": 1,
+        "stage": { "width": "number", "height": "number", "backgroundColor": "hex", "fit": "contain|cover" },
+        "scenes": "array of { id, title, durationMs, layers:[layer], keyframes:{ [layerId]: [keyframe] } }",
+        "layer": "{ id, type:'shape|text|image|svg', x,y,width,height, and type-specific: shape('shape' e.g. rect), text('text'), image/svg('src'); style: opacity,rotation,scaleX,scaleY,fill,stroke,color,fontSize,borderRadius }",
+        "keyframe": "{ timeMs:number, easing:'linear|easeIn|easeOut|easeInOut', props:{ target values } }"
+      },
+      "cautions": ["Keep on-screen text short.", "Verify no text/visual overlap in the player."]
+    },
+    "comparison": {
+      "engagement": "interactive",
+      "mobile_behavior": "viewer",
+      "purpose": "Before/after: image slider, text word-diff, or code line-diff.",
+      "prefer_over": "Two stacked images or blocks when the change itself is the lesson.",
+      "type_field": "content.compareType",
+      "content_schema": {
+        "compareType": "image | code | text",
+        "height": "number",
+        "image": "beforeImage, afterImage (urls); optional beforeAnnotations/afterAnnotations = { markers:[], drawings:[] }",
+        "text": "beforeText, afterText (strings)",
+        "code": "beforeCode, afterCode (strings)"
+      },
+      "example": { "compareType": "text", "height": 450, "beforeText": "The graph go up.", "afterText": "The graph rose steadily." }
+    },
+    "canvas": {
+      "engagement": "interactive",
+      "mobile_behavior": "viewer",
+      "purpose": "Replayable drawing; plays back paths like a hand drawing live, or a student sketch surface.",
+      "prefer_over": "One finished diagram image when the build order teaches something.",
+      "content_schema": {
+        "height": "number",
+        "backgroundColor": "hex",
+        "backgroundPattern": "plain | (other patterns)",
+        "paths": "array (stroke data authored in the visual editor)",
+        "images": "array",
+        "speed": "number",
+        "autoplay": "boolean",
+        "showReplayButton": "boolean",
+        "instantReplay": "boolean"
+      }
+    },
+    "mindmap": {
+      "engagement": "interactive",
+      "mobile_behavior": "viewer",
+      "purpose": "Node/relationship map for concept maps, brainstorms, and relationship structures.",
+      "content_schema": {
+        "nodes": "array of { id:string, x:number, y:number, label:string, type?:'root', color?:hex }"
+      },
+      "example": { "nodes": [ { "id": "root", "x": 300, "y": 150, "label": "Central idea", "type": "root", "color": "#3b82f6" } ] }
+    }
+  },
+  "mobile_behavior_defaults": {
+    "full": ["text", "paragraph", "quote", "callout", "accordion", "image", "video", "gallery", "quiz", "cloze", "sequence", "flashcard", "checkpoint", "interaction", "coding(inline)", "essay(<=600 words)"],
+    "viewer": ["canvas", "mindmap", "comparison", "illustration", "pdf"],
+    "desktop_recommended": ["data-lab", "embed", "coding(immersive)", "essay(>600 words)"],
+    "override_field": "content.mobileBehavior",
+    "override_values": ["full", "viewer", "simplified", "desktop_recommended", "desktop_required"]
+  },
+  "learning_beats": {
+    "definition": "A teaching unit one layer above blocks (setup -> model -> practice -> feedback). Mobile renders the lesson as a sequence of beats, not two panels.",
+    "auto_generation": {
+      "override": "If page.mobileBeatsOverride is a non-empty array, it is used verbatim.",
+      "single_layout": "Split on headings; every activity block closes the current beat.",
+      "split_layout": "Each right-panel activity anchors one beat; left blocks attach by heading section (if >1 heading) or by even chunking; extra left groups become trailing beats."
+    },
+    "authoring_rules": [
+      "Signpost with one heading per teaching point so beats break where meaning breaks.",
+      "Keep each right-panel activity next to (or in the same heading section as) the explanation it practices.",
+      "For a split page with N right activities, provide about N left heading sections (rough 1:1).",
+      "Order blocks setup -> model -> practice top to bottom within a panel.",
+      "One dominant activity per beat; split with a heading if a beat mixes unrelated activities.",
+      "For mobile-native interactivity prefer interaction widgets (full); treat canvas/illustration/comparison/mindmap as watch-only on phones."
+    ],
+    "override_shape": {
+      "mobileBeatsOverride": [
+        { "id": "beat-1", "label": "Introduce variables", "blockIds": ["text-a", "text-b", "quiz-a"] },
+        { "id": "beat-2", "label": "Practice in code", "blockIds": ["text-c", "coding-a"] }
+      ]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "alcheris": {
+      "command": "alcheris-mcp",
+      "env": {
+        "ALCHERIS_URL": "http://localhost:8000",
+        "ALCHERIS_EMAIL": "your-login-or-email",
+        "ALCHERIS_PASSWORD": "your-password"
+      }
+    }
+  }
+}

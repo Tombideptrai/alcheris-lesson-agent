@@ -1,0 +1,4 @@
+interface:
+  display_name: "Alcheris Lesson Agent"
+  short_description: "Build lessons and safe custom activities"
+  default_prompt: "Use $alcheris-lesson-agent to turn source material into a polished interactive Alcheris self-study lesson with valid blocks."
