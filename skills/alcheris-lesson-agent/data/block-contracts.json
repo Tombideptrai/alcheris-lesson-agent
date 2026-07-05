@@ -59,7 +59,8 @@
             "xAxisLabel": "string",
             "yAxisLabel": "string",
             "showFullGraph": "boolean (true shows the whole line at once; use for reference/model pages)",
-            "graphData": "array of { id:string, label:string (x tick), value:number (y), annotation?:string }"
+            "graphData": "array of { id:string, label:string (x tick), value:number (y), annotation?:string } for a single line",
+            "series": "OPTIONAL alternative to graphData for MULTIPLE lines: array of { label:string, color?:hex, points:[{label,value,annotation?}] } - drawn with a legend and shared slider reveal"
           },
           "example": {
             "mode": "graph",

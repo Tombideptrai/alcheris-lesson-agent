@@ -43,6 +43,9 @@ learner uncovers the trend instead of seeing the finished chart. Set
 
 - `graphData[]`: each point needs `id`, `label` (x-axis tick), `value` (y). `annotation`
   is optional and draws a small callout on the point.
+- Multiple lines: instead of `graphData`, provide `series: [{ label, color?, points:[{label,value,annotation?}] }]`
+  (one entry per line). The widget draws every line with a legend and a shared slider reveal.
+  Use this when a chart has several categories over the same time axis.
 - Use over a static `image` chart whenever the data changes across time and the learner
   should notice the movement. The slider reveal is the teaching moment.
 - Do NOT put the answer in `annotation` on a point that appears before a quiz about it.

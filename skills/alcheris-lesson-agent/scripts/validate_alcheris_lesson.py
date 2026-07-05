@@ -378,11 +378,20 @@ def validate_block(block: dict, page_index: int, block_index: int, warnings: lis
         if mode not in {"graph", "distribution", "equation", "embed"}:
             warnings.append(f"{label}: interaction should use mode graph, distribution, equation, or embed")
         elif mode == "graph":
-            data = content.get("graphData") or []
-            if not isinstance(data, list) or len(data) < 2:
-                errors.append(f"{label}: interaction graph needs graphData with at least 2 points")
-            elif any(not isinstance(p, dict) or p.get("value") is None or not has_text(p.get("label")) for p in data):
-                errors.append(f"{label}: interaction graph points need label and value")
+            series = content.get("series")
+            if isinstance(series, list) and series:
+                for si, s in enumerate(series):
+                    pts = (s or {}).get("points") or []
+                    if not isinstance(pts, list) or len(pts) < 2:
+                        errors.append(f"{label}: interaction graph series {si + 1} needs at least 2 points")
+                    elif any(not isinstance(p, dict) or p.get("value") is None or not has_text(p.get("label")) for p in pts):
+                        errors.append(f"{label}: interaction graph series {si + 1} points need label and value")
+            else:
+                data = content.get("graphData") or []
+                if not isinstance(data, list) or len(data) < 2:
+                    errors.append(f"{label}: interaction graph needs graphData (or series) with at least 2 points")
+                elif any(not isinstance(p, dict) or p.get("value") is None or not has_text(p.get("label")) for p in data):
+                    errors.append(f"{label}: interaction graph points need label and value")
         elif mode == "distribution":
             if content.get("statMean") is None or content.get("statStdDev") is None:
                 errors.append(f"{label}: interaction distribution needs statMean and statStdDev")
