@@ -130,7 +130,8 @@ Minimum visible content by block type:
   - `multiple_select`: at least 2 options and valid `correctAnswerIndices`.
   - `short_answer`: non-empty `correctShortAnswer`.
   - `cloze`: bracketed answers inside the question text, e.g. `The value [increased/rose] sharply`.
-- `flashcard`: `content.title`, `content.instructions`, and `content.cards` must be non-empty. Each card needs meaningful `front` and `back`; avoid vague fronts such as `Question 1`.
+  - Media: any question may include `image` (a URL), rendered above the question. Add it when the question refers to a chart, diagram, map, or picture, so learners are not answering a visual question with no visual. Reuse an existing lesson image URL or an uploaded asset.
+- `flashcard`: `content.title`, `content.instructions`, and `content.cards` must be non-empty. Each card needs meaningful `front` and `back`; avoid vague fronts such as `Question 1`. Cards may include `image` (a URL) and `imagePosition` (0-100 vertical focal point, default 50); add images for vocabulary, objects, places, and visual recall rather than leaving vocabulary cards text-only.
 - `sequence`: `content.title`, `content.instructions`, and at least 2 ordered `items` are required. Each item needs text.
 - `cloze`: `content.title`, `content.instructions`, and `content.text` are required. Text must include bracketed answers, e.g. `The trend [increased] sharply`. For writing language practice, include alternatives such as `[rose/increased/climbed]`.
 - `essay`: `content.prompt` must be non-empty. Include `minWords` and `maxWords`.

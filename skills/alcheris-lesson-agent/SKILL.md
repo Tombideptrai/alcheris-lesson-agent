@@ -70,6 +70,7 @@ Create Alcheris lessons as real self-study learning experiences for the target s
    - Learner explanations and model answers should be visible as text or callout blocks; use accordion only for optional reveal/check content.
    - Practice blocks must contain enough content to render visibly.
    - Flashcards must teach real vocabulary, concepts, or recall prompts. Do not use labels like "Overview question 1" as the card front unless the back makes the learning value obvious.
+   - Add images to quiz questions and flashcards when a visual aids recognition or recall: chart/diagram/map questions, and vocabulary/object/place flashcards. Quiz question `image` and flashcard card `image` (plus `imagePosition`, 0-100) take a URL - reuse an existing lesson image URL or an uploaded asset. Do not ship a visual question or a vocabulary deck as text-only when a picture would help the learner.
    - Sequence and cloze blocks must have a visible title and instructions.
    - Cloze instructions must tell learners when multiple answers are accepted, using bracket syntax such as `[rose/increased/climbed]`.
    - If the learner must produce language, code, diagrams, analysis, calculations, or decisions, include the needed vocabulary, syntax, rules, examples, or criteria before asking for production.
@@ -104,6 +105,7 @@ Create Alcheris lessons as real self-study learning experiences for the target s
 - No essay lacks a prompt and word target.
 - No custom_activity violates the contract in `references/alcheris-lesson-contracts.md`; every custom_activity must support the mobile player and include baseline analytics events.
 - Chart/data lessons include at least one visual stimulus. If the data moves over time, a live `interaction` graph is used rather than a static chart image, unless the user asked for a static image.
+- Quiz questions that refer to a chart, diagram, map, or picture include an `image`, and vocabulary/visual flashcards include card `image`s, instead of being text-only when a visual would help.
 - Interactive blocks are authored with valid `content` per `references/alcheris-interactive-blocks.md`: `interaction` has a valid `mode` and its mode data; `illustration` has scenes with layers and keyframes; `comparison` has a `compareType` and its before/after pair; `canvas`/`mindmap` have their required arrays.
 - Source material with movement, parameters, before/after, or a process was not flattened into static text/image when an interactive block fits.
 - The mobile path is sound: each right-panel activity pairs with its explanation, headings roughly match activity count on split pages, and `viewer`/`desktop_recommended` blocks are acceptable on a phone or replaced with a mobile-native alternative.

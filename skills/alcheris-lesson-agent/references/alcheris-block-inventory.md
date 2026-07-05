@@ -75,10 +75,10 @@ Use `table` for ingredient lists, `callout` for rules and traps, `sequence` for 
 
 ### Practice And Assessment
 
-- `quiz`: recognition, diagnosis, decision-making, conceptual checks, interpretation, multiple choice/select, short answer.
+- `quiz`: recognition, diagnosis, decision-making, conceptual checks, interpretation, multiple choice/select, short answer. Each question supports an `image` (URL) shown above it - use it for chart/diagram/map/picture questions instead of asking a visual question with no visual.
 - `cloze`: constrained recall or language/formula/code completion. Use bracketed answers and alternatives when appropriate.
 - `sequence`: ordering steps, workflows, process logic, chronology, body structure, algorithm order. Teach the order first.
-- `flashcard`: memory checks only: vocabulary, definitions, commands, formulas, key distinctions, symbols. Do not use for complex explanation.
+- `flashcard`: memory checks only: vocabulary, definitions, commands, formulas, key distinctions, symbols. Do not use for complex explanation. Each card supports an `image` (URL) and `imagePosition` (0-100) - add images for vocabulary, objects, and places rather than text-only cards.
 - `essay`: long-form writing or open response.
 - `custom_activity`: structured teacher-defined activity built from safe JSON primitives such as instructions, short/long text, choice, checklist, file upload reference, and submit. Use when one activity needs multiple fields, review rules, mobile behavior, completion rules, analytics events, or checkpoint signals. Do not include executable code.
 - `checkpoint`: reveal solution, sync/compare state, staged answer reveal, recovery point.

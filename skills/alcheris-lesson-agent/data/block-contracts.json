@@ -23,6 +23,11 @@
     { "signal": "a diagram built step by step", "use": "canvas", "instead_of": "one finished diagram image" },
     { "signal": "concepts and their relationships", "use": "mindmap", "instead_of": "a flat list" }
   ],
+  "media_in_practice_blocks": {
+    "note": "Quiz questions and flashcards accept images, but agents usually omit them and ship text-only. Include an image whenever a visual aids the question or the recall - especially chart/diagram questions and vocabulary/object flashcards. Reuse an existing lesson image URL or an uploaded asset URL.",
+    "quiz_question_image": "Each object in content.questions may include image: '<url>', rendered above the question. Use it when the question refers to a chart, diagram, map, or picture.",
+    "flashcard_card_image": "Each object in content.cards may include image: '<url>' and imagePosition: 0-100 (vertical focal point, default 50). Use images for vocabulary, objects, places, and visual recall."
+  },
   "blocks": {
     "interaction": {
       "engagement": "interactive",
