@@ -107,6 +107,10 @@ phones (see `references/alcheris-learning-beats.md`).
   when a process or transformation is best shown in motion; keep text minimal and verify
   no overlap.
 
+### Data Visualization
+
+- `chart`: responsive data chart - `line`, `bar`, `area`, or `pie`, with multiple series and optionally multiple charts per block. Use to PRESENT data figures cleanly. Content: `{ chartType, title, xKey, series:[{key,label,color}], data:[rows] }` (pie uses `data:[{name,value}]`). Prefer `interaction` mode `graph` instead when you want the learner to drag-to-reveal and explore; use `chart` when you just need to show the data richly (especially multi-series). Mobile: full.
+
 ### Coding And Data
 
 - `code`: static formatted code display.

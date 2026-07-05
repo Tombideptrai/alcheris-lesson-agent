@@ -179,6 +179,24 @@
         "nodes": "array of { id:string, x:number, y:number, label:string, type?:'root', color?:hex }"
       },
       "example": { "nodes": [ { "id": "root", "x": 300, "y": 150, "label": "Central idea", "type": "root", "color": "#3b82f6" } ] }
+    },
+    "chart": {
+      "engagement": "presentation",
+      "mobile_behavior": "full",
+      "purpose": "Responsive data chart (line, bar, area, pie) with multiple series and optionally multiple charts per block. Use to PRESENT data figures. Use interaction.graph instead when you want a drag-to-reveal exploration; use chart when you just need to show the data (especially multi-series, which interaction.graph also supports but chart renders more richly).",
+      "content_schema": {
+        "chartType": "line | bar | area | pie",
+        "title": "string",
+        "xKey": "field name in each data row for the x-axis/category (default 'label'; pie uses 'name')",
+        "series": "array of { key:string (a field in the data rows), label?:string, color?:hex }",
+        "data": "array of row objects: line/bar/area -> { [xKey]:string, <seriesKey>:number, ... }; pie -> { name:string, value:number }",
+        "charts": "OPTIONAL array of full chart configs to render several charts in one block"
+      },
+      "example": {
+        "chartType": "line", "title": "UK telephone calls, 1995-2002", "xKey": "year",
+        "series": [ { "key": "local", "label": "Local fixed-line", "color": "#4C72B0" }, { "key": "mobile", "label": "Mobiles", "color": "#55A868" } ],
+        "data": [ { "year": "1995", "local": 70, "mobile": 3 }, { "year": "2002", "local": 70, "mobile": 50 } ]
+      }
     }
   },
   "mobile_behavior_defaults": {
