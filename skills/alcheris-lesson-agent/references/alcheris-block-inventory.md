@@ -153,6 +153,24 @@ Use this quick test:
 - Need learners to reveal answers after effort: use `accordion` or `checkpoint`.
 - Need learners to compare a learner answer with a model: use `accordion`, `checkpoint`, `table`, or left-panel model plus right-panel production.
 
+## Exercise Variety And Underused Blocks
+
+Do not default to multiple-choice quizzes. A good lesson feels varied. Reach for the blocks agents most often forget:
+
+- `comparison` (text mode): weak vs strong sentence, draft vs revision, before vs after. Ideal for writing lessons.
+- `sequence`: order the steps of a process, the parts of a report, a paragraph's sentences, a workflow - after the order has been taught.
+- `cloze`: fill-the-gap for precise wording, collocations, formulas, or code fragments; use `[rose/increased/climbed]` for accepted alternatives.
+- `flashcard`: vocabulary, definitions, symbols, commands - grouped decks, not one flat table.
+- `mindmap`: brainstorm ideas or map relationships before writing.
+- `canvas`: annotate a chart, sketch a diagram, connect points.
+- `gallery`: multiple worked examples or before/after variants.
+- `checkpoint`: staged answer reveal after the learner attempts.
+- Quiz question types beyond `multiple_choice`: `short_answer` (one-line production), `multiple_select` (choose all that apply), `cloze` (inline fill-gap).
+
+For every skill the lesson teaches, include at least one PRODUCTION task (write / build / use it), not only recognition.
+
+Vocabulary presentation: never a single long flat table - it is exhausting to scan. Group by meaning into `flashcard` decks or `accordion` sections, and pair with a usage exercise (fill-gap or sentence writing).
+
 ## Anti-Patterns
 
 - Do not use flashcards as a substitute for teaching or analysis.

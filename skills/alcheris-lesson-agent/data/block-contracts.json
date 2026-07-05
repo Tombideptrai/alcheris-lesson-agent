@@ -9,6 +9,22 @@
     "frontend/src/features/block/canvasblock/CanvasRenderer.jsx",
     "frontend/src/features/player/mobileLearningBeats.js"
   ],
+  "pedagogical_spine": {
+    "flow": "realize -> understand -> apply",
+    "realize": "The learner notices the phenomenon via an interactive hook (drag-to-reveal graph, illustration/animation, notice prompt, short diagnostic) BEFORE any rule is stated.",
+    "understand": "Give the rule, model, and worked example; keep it scannable - bold key terms, callouts for the core rule/trap, bullets or an accordion for multi-point content.",
+    "apply": "The learner produces: guided practice with varied quiz types, then real production (write a sentence, build the thing). Apply must include production, not only recognition.",
+    "panel_mapping": "Realize + Understand on the LEFT; Apply (practice/production) on the RIGHT / floating panel.",
+    "rule": "Teach before you test: never place a question or task about a rule before the rule has been realized and understood; never open a page with a wall of text."
+  },
+  "authoring_rules": {
+    "emphasis": "Bold key terms; put core rules, traps, and warnings in callouts. Do not bold whole sentences, over-highlight, or use ALL CAPS.",
+    "multi_point": "Explanations covering three or more parallel points, rules, items, or steps use a bullet list or an accordion, not a dense paragraph. Text blocks support bullet lists and markdown bold.",
+    "exercise_variety": "Do not make every exercise multiple choice. Mix quiz types short_answer / multiple_select / cloze and standalone sequence / cloze / flashcard / comparison blocks, matched to the skill (recognition->quiz, ordering->sequence, precise wording->cloze, recall->flashcard, weak-vs-strong->comparison).",
+    "production": "Every taught skill needs at least one task where the learner PRODUCES it (short_answer for a sentence, essay for longer writing, custom_activity for structured tasks). For language/writing, test USING the language, e.g. 'write one sentence describing this trend using a strong verb', not only choosing a definition.",
+    "vocabulary": "Do not dump vocabulary or long reference lists into one flat table. Use flashcard decks grouped by meaning, grouped accordions, or compact grouped lists, and pair a vocabulary bank with at least one usage exercise.",
+    "illustration_placement": "An illustration always goes in the RIGHT panel using illustration mode as the single right-panel block; it demands space."
+  },
   "engagement_patterns": [
     "Reveal before explain: let the learner uncover the trend or curve first, then teach it.",
     "Manipulate before tell: let the learner move a slider and form a hypothesis before stating the rule.",

@@ -9,6 +9,16 @@ description: Build, edit, audit, and repair interactive self-study lessons in Al
 
 Create Alcheris lessons as real self-study learning experiences for the target subject, not teacher lesson plans and not content dumps. Every lesson must have visible learner-facing explanation, purposeful media or examples when the content needs them, active practice, and a verified student/player route before delivery.
 
+## Pedagogical Spine: Realize -> Understand -> Apply
+
+Every lesson, and ideally every page, flows through three stages. This is the backbone; page order, mobile beats, and panel/block choices all follow it.
+
+1. **Realize** - the learner first notices the phenomenon before any rule is stated. Open with an interactive hook or observation, not a wall of text: a drag-to-reveal `interaction` graph, an `illustration`/animation, a "what do you notice?" prompt, a short diagnostic. Never explain a rule the learner has not yet felt a need for.
+2. **Understand** - now give the rule, model, and worked example. Keep it scannable: bold the key terms, use callouts for the core rule or trap, and break multi-point explanations into bullets or an accordion.
+3. **Apply** - the learner does something with it: guided practice (varied quiz types), then production (write a sentence, build the thing). Apply must include real production, not only recognition.
+
+Panel mapping: **Realize + Understand live on the LEFT** (explanation, hook, model). **Apply lives on the RIGHT / floating panel** (the practice or production workspace). Teach before you test: never place a question or task about a rule before the rule has been realized and understood.
+
 ## User-Saved Rules
 
 - If the user asks to save a rule, save the rule in project or skill instructions. Do not interpret that as permission to create, rewrite, merge, publish, or upload a lesson.
@@ -18,9 +28,9 @@ Create Alcheris lessons as real self-study learning experiences for the target s
 - Do not mix separate lesson scopes unless the user explicitly asks for a combined lesson.
 - Trend graph and static graph are separate lesson scopes unless the user explicitly asks to combine them. If the user asks to differentiate them, add a focused contrast section without turning the lesson into a full combined trend/static module.
 - Write as the teacher speaking directly to students. Do not write meta phrases such as "your notes say", "the source says", "the Google Doc says", or "this page maps the source". Do not talk to the user inside the student lesson.
-- Use clear, natural classroom language. Use paragraphs when teaching, explaining, or walking students through thinking. Use bullets only for rules, steps, checklists, warnings, quick recaps, or when the learner needs separate items to follow.
-- Do not use two-panel/split pages when the page is mainly explanation, introduction, reading, or reference. Use single/blog-style pages for pure teaching, lesson introductions, rule lists, vocabulary banks, and model/reference pages.
-- Use split pages only when the learner needs source material or guidance beside a meaningful action.
+- Use clear, natural classroom language. Use flowing paragraphs when narrating one continuous line of thinking, but when an explanation covers multiple distinct points, rules, items, or steps, break it into a bullet list or an accordion instead of a dense paragraph. Text blocks support bullet lists - use them. Do not present three or more parallel ideas as one long paragraph.
+- Emphasize meaning: put key terms in **bold** and put the core rule, trap, or warning in a callout. Do not bold whole sentences, over-highlight, or rely on ALL CAPS - emphasis loses force when overused.
+- Prefer split pages for teaching: the realize hook and explanation go on the LEFT, the practice/production goes in the RIGHT (floating) panel. Use single/blog-style pages only for pure reading with no practice, such as a lesson introduction or a standalone reference. Do not stack practice underneath explanation in one column when a split (explanation left, practice right) is possible.
 - Do not put questions on the lesson introduction page unless the user explicitly asks for a diagnostic opener.
 - Teach the rule before asking students to answer questions about it.
 - Transformation must be taught mechanically when source material requires it: x-axis = time, y-axis = value/unit, each repeated category = one line, each bar/cell/slice value = one plotted point, connect points, then read movement.
@@ -36,17 +46,17 @@ Create Alcheris lessons as real self-study learning experiences for the target s
    - Define the learner outcome.
    - Extract all teachable ideas from the source before compressing it into pages.
    - Mark any source section that explains a sub-skill in detail as a high-detail teaching target. Do not collapse it into a single sentence, quiz, or heading.
-   - Choose a domain-neutral learning spine:
-     `orient -> recognize/notice -> explore deeper -> explain/model -> guided practice -> independent application -> check/reflect`.
+   - Structure the path on the Realize -> Understand -> Apply spine (see the top of this skill). The finer stages `orient -> recognize/notice -> explore deeper -> explain/model -> guided practice -> independent application -> check/reflect` all fold under those three: realize (orient/recognize/explore), understand (explain/model), apply (practice/application/check).
+   - Each teaching page should ideally complete a mini realize -> understand -> apply cycle, or the lesson should move through them across pages. Do not open a page with a wall of text; open with the realize hook.
    - Adapt the spine to the subject: charts, coding, math, design, language, science, product training, exam prep, or professional skills may emphasize different stages.
    - Make the structure visible to the learner. Page titles should read like steps in a lesson, not miscellaneous notes.
 
-3. Use panels deliberately.
-   - Left panel: learner instructions, explanation, models, visuals, hints, feedback, self-check notes.
-   - Right panel: student action, exploration, practice, workspaces, quizzes, cloze, sequence, flashcards, essay, coding, data-lab, illustration, canvas, interaction, or checkpoints.
-   - Decide the panel role before adding blocks. If the learner is mostly reading, use single/blog-style layout. If the learner is learning from guidance while doing something, use split layout. If the learner needs one focused workspace, use a full-panel mode.
-   - Do not leave either panel empty on split pages.
-   - Use single layout only for reading/reference pages.
+3. Use panels deliberately (realize + understand LEFT, apply RIGHT).
+   - Left panel = realize + understand: the interactive hook, explanation, models, worked examples, reference visuals/charts, the interactive `graph` (drag-to-reveal is explanation), hints, self-check notes. Interactive exploration and stimulus are explanation and belong on the left.
+   - Right (floating) panel = apply: the practice or production workspace - quiz, cloze, sequence, flashcards, essay, coding, data-lab, canvas, checkpoint, or a custom_activity. The floating panel should be mainly practice.
+   - Exception: `illustration` always goes in the RIGHT panel using `illustration` mode - it needs the space (see step 4), even though it is explanatory.
+   - Decide the panel role before adding blocks. A teaching-and-practice page is split. A pure reading/introduction/reference page with no practice is single.
+   - Do not leave either panel empty on split pages. Do not put the main practice on the left.
    - Do not write teacher-facing lesson-plan language into the student lesson unless the user explicitly asks for a teacher edition.
 
 4. Use full-panel modes only when they improve the experience.
@@ -57,7 +67,7 @@ Create Alcheris lessons as real self-study learning experiences for the target s
    - `code-practice`: single-file programming practice.
    - `ui-project`: full frontend project sandbox with preview.
    - `data-lab`: notebook-style data exploration.
-   - `illustration`: animated or visual presentation workspace.
+   - `illustration`: animated or visual presentation workspace. Always place an illustration in the RIGHT panel using `illustration` mode as the single right-panel block - it demands space and breaks or looks cramped in a shared column. The left panel then holds the purpose, observation prompt, and follow-up.
    - Avoid putting many ordinary blocks into a non-standard workspace mode.
    - For each non-standard mode, the left panel must support the workspace with source material, instructions, criteria, model, checklist, or hints. The right panel should usually contain one main workspace block.
 
@@ -70,7 +80,10 @@ Create Alcheris lessons as real self-study learning experiences for the target s
    - Learner explanations and model answers should be visible as text or callout blocks; use accordion only for optional reveal/check content.
    - Practice blocks must contain enough content to render visibly.
    - Flashcards must teach real vocabulary, concepts, or recall prompts. Do not use labels like "Overview question 1" as the card front unless the back makes the learning value obvious.
-   - Add images to quiz questions and flashcards when a visual aids recognition or recall: chart/diagram/map questions, and vocabulary/object/place flashcards. Quiz question `image` and flashcard card `image` (plus `imagePosition`, 0-100) take a URL - reuse an existing lesson image URL or an uploaded asset. Do not ship a visual question or a vocabulary deck as text-only when a picture would help the learner.
+   - Add images to quiz questions and flashcards when a visual aids recognition or recall: chart/diagram/map questions, and vocabulary/object/place flashcards. Quiz question `image` and flashcard card `image` (plus `imagePosition`, 0-100) take a URL - reuse an existing lesson image URL or an uploaded asset. If a helpful image would need a picture you do not have a URL for, flag it in a brief callout rather than silently leaving the visual out. (Autonomous image search/generation is a planned feature; until it ships, only reuse or flag.)
+   - Vary the practice; do not make every exercise multiple choice. Within a quiz use `short_answer`, `multiple_select`, and `cloze` (fill-the-gap) question types, and reach for standalone `sequence` (ordering), `cloze` (precise wording), `flashcard` (recall), and `comparison` (weak-vs-strong) blocks. Match the type to the skill, not to habit.
+   - Include production, not only recognition. Every skill the lesson teaches needs at least one task where the learner PRODUCES it: write a sentence, build the paragraph, use the vocabulary. Use `short_answer` for one-sentence production, `essay` for longer writing, `custom_activity` for structured multi-field tasks. For language/writing lessons, add exercises that test USING the target language (e.g. "write one sentence describing this trend using a strong verb"), not only choosing the right definition.
+   - Do not dump vocabulary or long reference lists into one flat table - it is exhausting to scan. Present vocabulary as `flashcard` decks grouped by meaning, grouped `accordion` sections, or short compact grouped lists, and always pair a vocabulary bank with at least one usage exercise (fill-the-gap or sentence writing), not just a lookup table.
    - Sequence and cloze blocks must have a visible title and instructions.
    - Cloze instructions must tell learners when multiple answers are accepted, using bracket syntax such as `[rose/increased/climbed]`.
    - If the learner must produce language, code, diagrams, analysis, calculations, or decisions, include the needed vocabulary, syntax, rules, examples, or criteria before asking for production.
@@ -115,6 +128,12 @@ Create Alcheris lessons as real self-study learning experiences for the target s
 - Model answers/examples are visible to the learner and not only hidden behind a collapsed accordion.
 - Full-panel pages use a compatible right-panel block.
 - Standard-mode pages are not hiding a major workspace that should be `essay`, `exam`, `code-practice`, `ui-project`, `data-lab`, or `illustration`.
+- Every page follows realize -> understand -> apply: no page tests a rule before it is taught, and no page opens with a wall of text instead of a realize hook (interaction, illustration, or notice prompt).
+- Practice and production live on the RIGHT (floating) panel; explanation and interactive hooks live on the LEFT; illustrations use `illustration` mode as the single right-panel block.
+- Key terms are bolded and core rules/traps sit in callouts; explanations with three or more parallel points use bullets or an accordion, not one dense paragraph.
+- Exercises are not all multiple choice: the lesson mixes question types (`short_answer`, `multiple_select`, `cloze`) and practice blocks (`sequence`, `cloze`, `flashcard`, `comparison`) matched to the skill.
+- Every taught skill has at least one production task (write / build / use it), not only recognition.
+- Vocabulary and long reference lists are presented as flashcards, grouped accordions, or compact grouped lists (not one long flat table) and paired with at least one usage exercise.
 - The student/player route has been checked or the inability to check is reported.
 
 ## References
