@@ -9,15 +9,24 @@ description: Build, edit, audit, and repair interactive self-study lessons in Al
 
 Create Alcheris lessons as real self-study learning experiences for the target subject, not teacher lesson plans and not content dumps. Every lesson must have visible learner-facing explanation, purposeful media or examples when the content needs them, active practice, and a verified student/player route before delivery.
 
-## Pedagogical Spine: Realize -> Understand -> Apply
+## Voice, Format, and the Spine
 
-Every lesson, and ideally every page, flows through three stages. This is the backbone; page order, mobile beats, and panel/block choices all follow it.
+### Persona (voice) - decide before writing a word
+Every lesson has a teaching **persona**, and every learner-facing line - hook, explanation, feedback, callouts, jokes - is written in it, consistently. A voiceless lesson reads like a textbook no matter how interactive it is. Read `references/alcheris-teacher-personas.md`. Teachers pick a preset or define their own; if the user names a character or vibe (e.g. "like Dante from Devil May Cry"), build a custom persona from it. Voice never changes the pedagogy - only how it sounds. Keep it classroom-appropriate; a wrong answer gets a warm or witty nudge, never a put-down.
 
-1. **Realize** - the learner first notices the phenomenon before any rule is stated. Open with an interactive hook or observation, not a wall of text: a drag-to-reveal `interaction` graph, an `illustration`/animation, a "what do you notice?" prompt, a short diagnostic. Never explain a rule the learner has not yet felt a need for.
-2. **Understand** - now give the rule, model, and worked example. Keep it scannable: bold the key terms, use callouts for the core rule or trap, and break multi-point explanations into bullets or an accordion.
-3. **Apply** - the learner does something with it: guided practice (varied quiz types), then production (write a sentence, build the thing). Apply must include real production, not only recognition.
+### Interactive article vs pinned workspace - the format decision
+Alcheris single-column pages are NOT static reading. They are **interactive articles**: a flowing narrative with interactions woven INLINE - a drag-to-reveal `interaction` graph mid-paragraph, an `illustration` the learner scrolls to, an inline quick-check quiz or cloze, a "try changing this" widget. This explorable-explanation format is the product's edge; make it the DEFAULT for teaching.
+Use a SPLIT page (pinned workspace) only when the learner has a **sustained task that needs the guidance kept visible beside it**: writing an essay, coding, a data-lab, a formal exam. Test: "Is there a sustained workspace the guidance must sit beside?" No -> interactive article (single layout). Yes -> split. Do NOT split-ify ordinary teaching or push quick checks into a side panel - inline them in the article instead.
 
-Panel mapping: **Realize + Understand live on the LEFT** (explanation, hook, model). **Apply lives on the RIGHT / floating panel** (the practice or production workspace). Teach before you test: never place a question or task about a rule before the rule has been realized and understood.
+### The spine: Hook -> Realize -> Understand -> Apply -> Reflect
+1. **Hook** (engagement) - the "why should I care?" opener: a relatable scene, stakes, a curiosity gap, or a "by the end you'll..." promise, in persona. Distinct from Realize - it earns attention before any content. Usually an article opener with one inline interactive pull.
+2. **Realize** - the learner notices the phenomenon via an interactive element before any rule is stated (drag a slider, watch an animation, a "what do you notice?" prompt). Never explain a rule the learner has not yet felt a need for.
+3. **Understand** - give the rule, model, and worked example; scannable (bold key terms, callouts for the core rule/trap, bullets or an accordion for multi-point), with inline widgets.
+4. **Apply** - guided practice (varied types) + real production. Light checks stay INLINE in the article; a sustained production task (essay/coding/exam) becomes a split pinned workspace.
+5. **Reflect** - a short article closer in persona: what you can now do, the one big idea, a next step.
+
+### Progressive disclosure (extra reading)
+Keep the main path clean and reward the curious: put depth (the why, the proof, an edge case, a bit of history, a harder challenge for fast finishers) in **"go deeper" accordions** and **side callouts**, not in the main flow. The confident reader flows through; the curious one taps to dig.
 
 ## User-Saved Rules
 
@@ -131,7 +140,10 @@ Panel mapping: **Realize + Understand live on the LEFT** (explanation, hook, mod
 - Model answers/examples are visible to the learner and not only hidden behind a collapsed accordion.
 - Full-panel pages use a compatible right-panel block.
 - Standard-mode pages are not hiding a major workspace that should be `essay`, `exam`, `code-practice`, `ui-project`, `data-lab`, or `illustration`.
-- Every page follows realize -> understand -> apply: no page tests a rule before it is taught, and no page opens with a wall of text instead of a realize hook (interaction, illustration, or notice prompt).
+- The lesson opens with an engagement hook (why-care, in persona), and is written in ONE consistent persona from hook to reflection.
+- Teaching flows as interactive articles (single column, interactions and quick checks woven inline); split/pinned-workspace layout is used ONLY for sustained tasks (essay, coding, data-lab, exam), not ordinary teaching.
+- A short reflection closes the lesson; depth and extra reading live in "go deeper" accordions and side callouts, not dumped in the main flow.
+- Every page follows the spine (hook -> realize -> understand -> apply -> reflect): no page tests a rule before it is taught, and no page opens with a wall of text instead of a hook.
 - Practice and production live on the RIGHT (floating) panel; explanation and interactive hooks live on the LEFT; illustrations use `illustration` mode as the single right-panel block.
 - Key terms are bolded and core rules/traps sit in callouts; explanations with three or more parallel points use bullets or an accordion, not one dense paragraph.
 - Exercises are not all multiple choice: the lesson mixes question types (`short_answer`, `multiple_select`, `cloze`) and practice blocks (`sequence`, `cloze`, `flashcard`, `comparison`) matched to the skill.
@@ -148,5 +160,6 @@ Panel mapping: **Realize + Understand live on the LEFT** (explanation, hook, mod
 - Read `references/alcheris-block-inventory.md` when choosing blocks, layouts, and full-panel modes.
 - Read `references/alcheris-interactive-blocks.md` when the source has movement, parameters, a before/after state, or a process, and to author interaction/illustration/comparison/canvas/mindmap content correctly.
 - Read `references/alcheris-learning-beats.md` when structuring a lesson so it collapses into a clean mobile path.
+- Read `references/alcheris-teacher-personas.md` before writing any learner-facing text; write the whole lesson in the declared persona.
 - `data/block-contracts.json` is the machine-readable source of truth for interactive-block schemas, mobile behavior, and beats. The human references above and the native in-app agent prompt both derive from it; keep them in sync with it.
 - Use `scripts/validate_alcheris_lesson.py` to audit a saved lesson from the backend.
