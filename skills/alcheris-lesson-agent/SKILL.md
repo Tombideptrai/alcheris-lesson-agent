@@ -85,7 +85,8 @@ Panel mapping: **Realize + Understand live on the LEFT** (explanation, hook, mod
    - Include production, not only recognition. Every skill the lesson teaches needs at least one task where the learner PRODUCES it: write a sentence, build the paragraph, use the vocabulary. Use `short_answer` for one-sentence production, `essay` for longer writing, `custom_activity` for structured multi-field tasks. For language/writing lessons, add exercises that test USING the target language (e.g. "write one sentence describing this trend using a strong verb"), not only choosing the right definition.
    - Do not dump vocabulary or long reference lists into one flat table - it is exhausting to scan. Present vocabulary as `flashcard` decks grouped by meaning, grouped `accordion` sections, or short compact grouped lists, and always pair a vocabulary bank with at least one usage exercise (fill-the-gap or sentence writing), not just a lookup table.
    - Sequence and cloze blocks must have a visible title and instructions.
-   - Cloze instructions must tell learners when multiple answers are accepted, using bracket syntax such as `[rose/increased/climbed]`.
+   - Sequence items must be the REAL sentences, steps, or lines the learner reorders into a coherent whole - not abstract labels like "Starting point:" or "Trend movement:". To practise paragraph order, use the actual model sentences that form the paragraph.
+   - Cloze: use bracket syntax `[rose/increased/climbed]` to accept multiple answers, AND always include a `wordBank` (an array of words the learner drags onto the blanks, with a few plausible distractors). Never ship a fill-the-gap with empty blanks and no word list to choose from.
    - If the learner must produce language, code, diagrams, analysis, calculations, or decisions, include the needed vocabulary, syntax, rules, examples, or criteria before asking for production.
    - If the source teaches how to write or build a component, include the component's purpose, ingredients, allowed content, forbidden content, model, non-example or distractor, guided practice, and independent production task.
    - When stating a rule, explain why the rule exists and give at least one concrete example. For decision rules, also include a non-example or contrast case when it helps prevent random or shallow application.
@@ -132,7 +133,8 @@ Panel mapping: **Realize + Understand live on the LEFT** (explanation, hook, mod
 - Practice and production live on the RIGHT (floating) panel; explanation and interactive hooks live on the LEFT; illustrations use `illustration` mode as the single right-panel block.
 - Key terms are bolded and core rules/traps sit in callouts; explanations with three or more parallel points use bullets or an accordion, not one dense paragraph.
 - Exercises are not all multiple choice: the lesson mixes question types (`short_answer`, `multiple_select`, `cloze`) and practice blocks (`sequence`, `cloze`, `flashcard`, `comparison`) matched to the skill.
-- Every taught skill has at least one production task (write / build / use it), not only recognition.
+- Every taught skill has at least one production task (write / build / use it), not only recognition. Language/writing lessons include tasks to write separate sentences and to reorder real sentences into a paragraph, not only multiple-choice recognition.
+- Every cloze includes a `wordBank` of draggable words (with a few distractors); no fill-the-gap ships with blanks and no word list. Sequence items are the real sentences/steps to reorder, not abstract labels.
 - Vocabulary and long reference lists are presented as flashcards, grouped accordions, or compact grouped lists (not one long flat table) and paired with at least one usage exercise.
 - The student/player route has been checked or the inability to check is reported.
 

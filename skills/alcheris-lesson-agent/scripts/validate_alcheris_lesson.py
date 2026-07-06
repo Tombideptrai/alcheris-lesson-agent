@@ -363,6 +363,8 @@ def validate_block(block: dict, page_index: int, block_index: int, warnings: lis
             errors.append(f"{label}: cloze needs text with bracketed answers")
         elif "/" not in text:
             warnings.append(f"{label}: consider accepted alternatives such as [rose/increased/climbed]")
+        if not (content.get("wordBank") or []):
+            warnings.append(f"{label}: cloze has no wordBank; add draggable words (with distractors) so learners see a word list")
     elif btype == "essay":
         if not has_text(content.get("prompt")):
             errors.append(f"{label}: essay needs a prompt")
