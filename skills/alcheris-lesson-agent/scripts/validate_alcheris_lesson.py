@@ -444,6 +444,8 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
     summary = {"pages": []}
     has_image = False
     has_interaction_graph = False
+    has_chart = False
+    has_interaction = False
     mc_indices = []
     active_blocks = {
         "quiz",
@@ -524,6 +526,10 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
                 has_image = True
             if block.get("type") == "interaction" and (block.get("content") or {}).get("mode") == "graph":
                 has_interaction_graph = True
+            if block.get("type") == "interaction":
+                has_interaction = True
+            if block.get("type") == "chart":
+                has_chart = True
             if block.get("type") in active_blocks:
                 active_count += 1
             if block.get("type") == "quiz":
@@ -536,8 +542,8 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
     chart_like = contains_any(lesson_text, ("chart", "graph", "table", "trend"))
     trend_writing_like = chart_like and contains_any(lesson_text, ("writing", "introduction", "overview", "overall", "response", "paragraph"))
 
-    if chart_like and not has_image and not has_interaction_graph:
-        warnings.append("chart/data lesson appears to need a visual stimulus (image or interaction graph) but none was found")
+    if chart_like and not (has_image or has_interaction_graph or has_chart or has_interaction):
+        warnings.append("chart/data lesson appears to need a visual stimulus (image, chart, or interaction) but none was found")
 
     if trend_writing_like and has_image and not has_interaction_graph:
         warnings.append(
