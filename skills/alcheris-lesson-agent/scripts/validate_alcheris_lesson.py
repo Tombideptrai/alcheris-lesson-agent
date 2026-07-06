@@ -444,6 +444,7 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
     summary = {"pages": []}
     has_image = False
     has_interaction_graph = False
+    mc_indices = []
     active_blocks = {
         "quiz",
         "cloze",
@@ -525,6 +526,10 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
                 has_interaction_graph = True
             if block.get("type") in active_blocks:
                 active_count += 1
+            if block.get("type") == "quiz":
+                for q in (block.get("content") or {}).get("questions", []):
+                    if (q.get("type") or "multiple_choice") == "multiple_choice" and isinstance(q.get("correctAnswerIndex"), int):
+                        mc_indices.append(q["correctAnswerIndex"])
             validate_block(block, pi, bi, warnings, errors)
 
     lesson_text = json.dumps(lesson, ensure_ascii=False).lower()
@@ -566,6 +571,18 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
         missing_overview = [name for name, terms in overview_requirements.items() if not contains_any(lesson_text, terms)]
         if missing_overview:
             warnings.append("trend-writing overview lesson should explicitly teach: " + ", ".join(missing_overview))
+
+    if len(mc_indices) >= 4:
+        counts = {}
+        for idx in mc_indices:
+            counts[idx] = counts.get(idx, 0) + 1
+        top_idx, top_n = max(counts.items(), key=lambda kv: kv[1])
+        if top_n / len(mc_indices) >= 0.8:
+            letter = "ABCDEFGH"[top_idx] if 0 <= top_idx < 8 else str(top_idx)
+            warnings.append(
+                f"{top_n}/{len(mc_indices)} multiple-choice answers are at position {letter} (index {top_idx}); "
+                "shuffle each question's options so the correct answer is distributed across positions"
+            )
 
     if active_count == 0:
         errors.append("lesson has no active learning blocks")
