@@ -7,7 +7,12 @@
     "frontend/src/features/block/illustrationblock/illustrationUtils.js",
     "frontend/src/features/block/comparisonblock/ComparisonRenderer.jsx",
     "frontend/src/features/block/canvasblock/CanvasRenderer.jsx",
-    "frontend/src/features/player/mobileLearningBeats.js"
+    "frontend/src/features/block/artifact/ArtifactBlock.jsx",
+    "frontend/src/features/block/artifact/artifactContract.js",
+    "frontend/src/features/player/mobileLearningBeats.js",
+    "frontend/src/features/player/MobileLessonFlow.jsx",
+    "frontend/src/features/player/playerBlockVisibility.js",
+    "frontend/src/features/player/blockAnswered.js"
   ],
   "pedagogical_spine": {
     "flow": "hook -> realize -> understand -> apply -> reflect",
@@ -25,7 +30,7 @@
     "exercise_variety": "Do not make every exercise multiple choice. Mix quiz types short_answer / multiple_select / cloze and standalone sequence / cloze / flashcard / comparison blocks, matched to the skill (recognition->quiz, ordering->sequence, precise wording->cloze, recall->flashcard, weak-vs-strong->comparison).",
     "answer_distribution": "Vary the correct-answer position in multiple choice. NEVER default the correct option to A (correctAnswerIndex 0). Order options naturally, not answer-first, and distribute correct answers across A/B/C/D roughly evenly across the lesson. Every-answer-is-A is a broken lesson.",
     "no_duplicate_practice": "Do not duplicate practice across pages. Each page's exercises must be distinct in content and type; never repeat the same question, reuse a block type with the same material, or give two pages an identical practice structure.",
-    "production": "Every taught skill needs at least one task where the learner PRODUCES it (short_answer for a sentence, essay for longer writing, custom_activity for structured tasks). For language/writing, test USING the language, e.g. 'write one sentence describing this trend using a strong verb', not only choosing a definition.",
+    "production": "Every taught skill needs at least one task where the learner PRODUCES it (short_answer for a sentence, essay for longer writing, custom_activity for structured tasks, artifact for custom interactive HTML/CSS/JS learning objects). For language/writing, test USING the language, e.g. 'write one sentence describing this trend using a strong verb', not only choosing a definition.",
     "vocabulary": "Do not dump vocabulary or long reference lists into one flat table. Use flashcard decks grouped by meaning, grouped accordions, or compact grouped lists, and pair a vocabulary bank with at least one usage exercise.",
     "illustration_placement": "An illustration always goes in the RIGHT panel using illustration mode as the single right-panel block; it demands space.",
     "persona": "Every lesson has a teaching persona (voice); write ALL learner-facing text in it consistently (hook, explanations, feedback, callouts). Teachers pick a preset or define their own; if the user names a character/vibe, build a custom persona from it. Voice never changes the pedagogy, only how it sounds, and it NEVER shortens the teaching - keep full explanatory depth, at least one worked example, and the why (not just the what). Punchy personas (Dante/high-energy) must be cool AND thorough, not reduce explanations to one-liners. Keep it classroom-appropriate. See references/alcheris-teacher-personas.md.",
@@ -206,17 +211,72 @@
         "series": [ { "key": "local", "label": "Local fixed-line", "color": "#4C72B0" }, { "key": "mobile", "label": "Mobiles", "color": "#55A868" } ],
         "data": [ { "year": "1995", "local": 70, "mobile": 3 }, { "year": "2002", "local": 70, "mobile": 50 } ]
       }
+    },
+    "artifact": {
+      "engagement": "interactive",
+      "mobile_behavior": "content.mobileBehavior.mode (full | viewer | simplified | desktop_recommended | desktop_required)",
+      "purpose": "Sandboxed HTML/CSS/JS learning object, like a Notion-style artifact inside the Alcheris editor/player. Use when native blocks cannot express the custom interface, simulation, drag/drop tool, or reusable micro-app.",
+      "prefer_over": "A pile of static text/images or an unsafe custom_activity when the learner needs a custom interactive object.",
+      "content_schema": {
+        "type": "artifact",
+        "title": "string",
+        "description": "optional string",
+        "version": "semantic version string, e.g. 1.0.0",
+        "runtime": "html_sandbox",
+        "entry": "file path present in files, e.g. /index.html",
+        "files": "object of path -> text content; include /index.html and optional /styles.css /script.js",
+        "renderTargets": "{ editorBlock:true, fullPanel:true, playerDesktop:true, playerMobile:true }",
+        "mobileBehavior": "{ mode:'full|viewer|simplified|desktop_recommended|desktop_required', minWidth?:number, layout?:'responsive|fixed' }",
+        "completion": "{ type:'none|manual|on_interaction|on_submit' }",
+        "submission": "{ enabled:boolean, mode:'none|draft_only|submit_required|draft_and_submit|teacher_review_required|score_required', storage:'alcheris_managed' }",
+        "analytics": "{ events:['block_viewed','block_interacted','block_completed', ...] }",
+        "security": "{ sandbox:true, allowNetwork:false, allowClipboard:boolean, allowStorage:false }",
+        "reuse": "{ scope?:'lesson|teacher|community', tags?:string[] }"
+      },
+      "bridge": {
+        "track": "window.AlcherisArtifact.track(action, payload)",
+        "complete": "window.AlcherisArtifact.complete(payload)",
+        "submit": "window.AlcherisArtifact.submit(answer)",
+        "resize": "window.AlcherisArtifact.resize(height)"
+      },
+      "example": {
+        "type": "artifact",
+        "title": "Sentence Sorter",
+        "version": "1.0.0",
+        "runtime": "html_sandbox",
+        "entry": "/index.html",
+        "files": {
+          "/index.html": "<main><h1>Sentence Sorter</h1><button id=\"done\">Done</button></main>",
+          "/styles.css": "body { font-family: system-ui; }",
+          "/script.js": "document.getElementById('done').onclick = () => window.AlcherisArtifact.complete({ score: 1 });"
+        },
+        "renderTargets": { "editorBlock": true, "fullPanel": true, "playerDesktop": true, "playerMobile": true },
+        "mobileBehavior": { "mode": "full", "minWidth": 320, "layout": "responsive" },
+        "completion": { "type": "on_interaction" },
+        "submission": { "enabled": false, "mode": "none", "storage": "alcheris_managed" },
+        "analytics": { "events": ["block_viewed", "block_interacted", "block_completed"] },
+        "security": { "sandbox": true, "allowNetwork": false, "allowClipboard": false, "allowStorage": false }
+      },
+      "cautions": [
+        "Do not include credentials, private URLs, auth tokens, or hidden tracking.",
+        "Do not use eval-style code or remote scripts to bypass review.",
+        "Do not access parent windows, cookies, local storage, or teacher storage directly.",
+        "Keep allowNetwork false in beta; networked artifacts require a reviewed deployment setting.",
+        "Artifact library writes are teacher/admin-only; students may only interact and submit through the bridge.",
+        "Do not mark mobileBehavior.mode full unless the artifact is actually responsive and touch-friendly.",
+        "In guided flow, the artifact MUST call window.AlcherisArtifact.submit or .complete at least once to release the answer gate; otherwise the learner is trapped."
+      ]
     }
   },
   "mobile_behavior_defaults": {
-    "full": ["text", "paragraph", "quote", "callout", "accordion", "image", "video", "gallery", "quiz", "cloze", "sequence", "flashcard", "checkpoint", "interaction", "coding(inline)", "essay(<=600 words)"],
+    "full": ["text", "paragraph", "quote", "callout", "accordion", "image", "video", "gallery", "quiz", "cloze", "sequence", "flashcard", "checkpoint", "interaction", "artifact(responsive)", "coding(inline)", "essay(<=600 words)"],
     "viewer": ["canvas", "mindmap", "comparison", "illustration", "pdf"],
-    "desktop_recommended": ["data-lab", "embed", "coding(immersive)", "essay(>600 words)"],
+    "desktop_recommended": ["data-lab", "embed", "artifact(complex)", "coding(immersive)", "essay(>600 words)"],
     "override_field": "content.mobileBehavior",
     "override_values": ["full", "viewer", "simplified", "desktop_recommended", "desktop_required"]
   },
   "learning_beats": {
-    "definition": "A teaching unit one layer above blocks (setup -> model -> practice -> feedback). Mobile renders the lesson as a sequence of beats, not two panels.",
+    "definition": "A teaching unit one layer above blocks (setup -> model -> practice -> feedback). Mobile always renders as a sequence of beats; desktop learners can also toggle a guided flow that reveals blocks one at a time using the same engine.",
     "auto_generation": {
       "override": "If page.mobileBeatsOverride is a non-empty array, it is used verbatim.",
       "single_layout": "Split on headings; every activity block closes the current beat.",
@@ -228,7 +288,8 @@
       "For a split page with N right activities, provide about N left heading sections (rough 1:1).",
       "Order blocks setup -> model -> practice top to bottom within a panel.",
       "One dominant activity per beat; split with a heading if a beat mixes unrelated activities.",
-      "For mobile-native interactivity prefer interaction widgets (full); treat canvas/illustration/comparison/mindmap as watch-only on phones."
+      "For mobile-native interactivity prefer interaction widgets (full); treat canvas/illustration/comparison/mindmap as watch-only on phones. Artifact blocks follow content.mobileBehavior.mode and should be full only when responsive and touch-friendly.",
+      "Every block must stand alone in guided flow: guided flow reveals one block at a time with a Continue button between them. Do not rely on the surrounding blocks being visible for context; put framing in the block's title, heading, or first sentence."
     ],
     "override_shape": {
       "mobileBeatsOverride": [
@@ -236,5 +297,32 @@
         { "id": "beat-2", "label": "Practice in code", "blockIds": ["text-c", "coding-a"] }
       ]
     }
+  },
+  "guided_flow": {
+    "description": "Guided flow reveals blocks one at a time with a Continue button. It is always on for mobile, and desktop learners can toggle it in the player header (Layers button). Same beat engine as mobile - authoring rules from learning_beats apply directly.",
+    "answer_gated_types": ["quiz", "cloze", "sequence", "essay", "custom_activity", "artifact", "interaction"],
+    "answer_gate_contract": "In guided flow, an answer-gated block HARD-BLOCKS progression until the learner completes it (the block dispatches a 'block-answered' event). Every gated block must be completable end-to-end: quiz has >=1 valid question, cloze has bracketed answers + wordBank, sequence has >=2 real items, essay has a prompt, custom_activity has a working submit step, artifact calls window.AlcherisArtifact.submit or .complete, interaction is resolvable (slider reaches end, equation puzzle has a valid target). A gated block that cannot be completed silently traps the learner. Prefer non-gated equivalents (text/callout/image/illustration/chart) for decorative blocks.",
+    "empty_block_filter": "The player silently filters empty text/paragraph/h1-h6/quote/code blocks (playerBlockVisibility.js). Do not ship placeholder-only text/heading blocks and assume they will be visible - they won't."
+  },
+  "sequential_order": {
+    "description": "Courses have a course-level `linear_progression` flag (Sequential order in CourseManager) and per-lesson `unlock_requirements`. When linear_progression is on, students must finish each lesson to unlock the next in the shown order. Per-lesson requirements add extra prereq lessons on top.",
+    "authoring_implication": "In a sequential-order course, EVERY lesson AND every gated block must be completable start-to-finish. A broken quiz or an artifact that never emits completion stops the student not only inside the lesson but from opening the next one. Verify lesson completability whenever the target course has linear_progression set."
+  },
+  "teacher_assets": {
+    "description": "Teachers own an asset library at /teacher/assets (backend endpoint /api/assets/) for reusable images, video, PDFs, DOCX, Markdown, SVG, and other teaching files. Assets are Alcheris-managed URLs - artifacts and blocks reference them by URL.",
+    "authoring_rules": [
+      "Prefer teacher-library assets over one-off image_search for media that recurs across lessons (course logo, subject-specific diagrams, worked-example images).",
+      "For an artifact that needs a media file, use a teacher-asset URL rather than an external URL - the sandbox has network off by default and only reaches Alcheris-managed origins.",
+      "Uploaded teacher assets still need credit fields when they originate from an attributed source (Pexels/Wikimedia)."
+    ]
+  },
+  "student_notebook": {
+    "description": "Students own a personal notebook (StudentNotebook + StudentNotebookItem in backend) where they can save any lesson block into their own review workspace. Each notebook item stores a frozen source_snapshot of the block at fork time - teacher edits to the lesson do NOT retroactively change a student's saved copy. Notebook items can also carry student_state (their answers, interaction values, submission), and are the future substrate for AI-personalized review paths and NotebookLM-style source-pack export.",
+    "authoring_implication": "Author every block to be MEANINGFUL WHEN DETACHED from the surrounding page: a callout carries its own rule, a worked example carries problem + solution, a flashcard teaches standalone, an interaction includes title + observation prompt inside the widget. Blocks that only make sense next to their neighbours become unusable notebook items. This is the same rule as the guided-flow one-block-at-a-time reveal - both flatten out contextual dependencies.",
+    "forkable_kinds": ["note", "forked_block", "forked_interaction", "forked_artifact", "attempt", "generated_review", "asset", "external_source"]
+  },
+  "checkpoint_block": {
+    "description": "The checkpoint block is the designed staged-reveal gate: use it when a page should PAUSE and force the learner to reveal/confirm/compare before continuing (staged answer reveal, sync/compare state, recovery point). Its future guided-flow role extends per-block trigger rules to code/data-lab/artifact and desktop-heavy blocks (pass-check / manual continue / desktop-required notice) - author with that intent even where the runtime is not yet wired.",
+    "not_currently_in_answer_gate_list": "checkpoint is NOT yet in guided_flow.answer_gated_types (which reflects what the running player dispatches). Design intent is to add it. Do not rely on checkpoint hard-blocking progression today, but do use it to signal the pedagogical intent of a gated moment."
   }
 }

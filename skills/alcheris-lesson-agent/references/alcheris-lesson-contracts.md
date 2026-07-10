@@ -108,6 +108,7 @@ Use non-standard modes only for immersive right-side work. The right panel shoul
 - `ui-project`: use when the learner builds or edits an interface with preview. Right panel should contain one non-inline `coding` block. Left panel should contain design brief, required states, assets, acceptance criteria, and interaction notes.
 - `data-lab`: use when the learner works through notebook-like data exploration. Right panel should contain one `data-lab` block. Left panel should contain dataset context, variable guide, analysis question, expected output, and interpretation checklist.
 - `illustration`: use when the main learning object is animated or staged visual explanation. Right panel should contain one `illustration` block. Left panel should contain purpose, observation prompts, legend/key, and after-view question.
+- `artifact`: use when the learner works with one sandboxed custom HTML/CSS/JS learning object. Right panel should contain one `artifact` block. Left panel should contain purpose, instructions, success criteria, mobile note when relevant, and any supporting model/checklist.
 
 Keep `standard` mode when the right side contains several normal activity blocks such as quiz plus sequence, quiz plus standalone cloze, flashcard plus quick check, short canvas task plus quiz, or other mixed task families. Do not put quiz plus flashcards plus text into `essay`, `data-lab`, or another non-quiz immersive mode. Those modes make the entire right panel behave like a workspace.
 
@@ -136,6 +137,7 @@ Minimum visible content by block type:
 - `cloze`: `content.title`, `content.instructions`, and `content.text` are required. Text must include bracketed answers, e.g. `The trend [increased] sharply`. For writing language practice, include alternatives such as `[rose/increased/climbed]`. Always include `content.wordBank` (an array of words the learner drags onto the blanks, with a few plausible distractors); never leave a fill-the-gap with no word list.
 - `essay`: `content.prompt` must be non-empty. Include `minWords` and `maxWords`.
 - `custom_activity`: `content` is the complete safe custom activity definition. It must be JSON-compatible data only, with no executable functions, imports, closures, or arbitrary runtime code. See "Custom Activity Contract" below.
+- `artifact`: `content` is the complete sandboxed artifact definition. It contains HTML/CSS/JS files as strings plus Alcheris-managed render targets, mobile behavior, completion, submission, analytics, and security settings. See "Artifact Contract" below.
 - `coding` or `snippet`: include `language`, `files` or `code`, and avoid immersive coding unless the right panel mode supports it.
 - `data-lab`: include non-empty `cells`.
 - `interaction`: set `content.mode` to `graph`, `distribution`, `equation`, or `embed`, plus the fields that mode requires. `graph` needs `graphData` (array of `{ id, label, value, annotation? }`) with `graphTitle`/axis labels; `distribution` needs `statMean`/`statStdDev` with `statTitle`/`statInstruction`; `equation` needs `mathExpression` with range fields and optional `gameMode`/`targets`. Full schemas and examples: `references/alcheris-interactive-blocks.md` and `data/block-contracts.json`.
@@ -324,6 +326,76 @@ Custom activity anti-patterns:
 - Do not save student answers or drafts inside the definition.
 - Do not store uploaded binary data in JSON. Store file metadata/reference ids only.
 - Do not omit `playerMobile`; students may complete lessons on phones.
+
+## Artifact Contract
+
+Use `artifact` when the learner needs a custom interactive object that native Alcheris blocks cannot express: a generated HTML/CSS/JS simulation, drag/drop micro-tool, reusable classroom widget, or custom visual practice panel. It is not a free plugin host. The artifact runs inside an iframe sandbox and talks to Alcheris through the artifact bridge only.
+
+Required top-level shape:
+
+```json
+{
+  "type": "artifact",
+  "title": "Sentence Sorter",
+  "version": "1.0.0",
+  "runtime": "html_sandbox",
+  "entry": "/index.html",
+  "files": {
+    "/index.html": "<main>...</main>",
+    "/styles.css": "body { font-family: system-ui; }",
+    "/script.js": "window.AlcherisArtifact.complete({ score: 1 });"
+  },
+  "renderTargets": {
+    "editorBlock": true,
+    "fullPanel": true,
+    "playerDesktop": true,
+    "playerMobile": true
+  },
+  "mobileBehavior": {
+    "mode": "full",
+    "minWidth": 320,
+    "layout": "responsive"
+  },
+  "completion": {
+    "type": "on_interaction"
+  },
+  "submission": {
+    "enabled": false,
+    "mode": "none",
+    "storage": "alcheris_managed"
+  },
+  "analytics": {
+    "events": ["block_viewed", "block_interacted", "block_completed"]
+  },
+  "security": {
+    "sandbox": true,
+    "allowNetwork": false,
+    "allowClipboard": false,
+    "allowStorage": false
+  }
+}
+```
+
+Artifact rules:
+
+- `runtime` must be `html_sandbox`.
+- `entry` must point to an existing file in `files`.
+- `files` may include `/index.html`, `/styles.css`, `/script.js`, and other small text assets. Keep total inline file content under the app limit; use asset references for large media.
+- `renderTargets.playerMobile` is required. Use `mobileBehavior.mode: "full"` for responsive phone-ready artifacts, `viewer` for read/watch artifacts, `desktop_recommended` for awkward-but-usable experiences, and `desktop_required` only when phone completion is genuinely impossible.
+- Baseline analytics events are required: `block_viewed`, `block_interacted`, and `block_completed`.
+- Student answers, completion, resize, and analytics signals must go through `window.AlcherisArtifact` bridge methods. Do not write student work into the definition.
+- In guided flow, the artifact must call `window.AlcherisArtifact.submit(answer)` or `.complete({...})` at least once during a learner's interaction, otherwise the answer-gate never opens and the learner is trapped.
+- Security defaults are strict: sandbox on, storage off, network off, and clipboard off unless needed. In beta, `allowNetwork` stays `false`; networked artifacts require an explicit reviewed deployment setting.
+- Artifact library writes are teacher/admin-only. Students may run artifacts and submit through the bridge, but they must not author, mutate, or publish artifact definitions.
+- Prefer Alcheris-managed teacher assets for images/video/audio referenced inside an artifact (uploaded via `/teacher/assets` or the editor asset picker) - the artifact sandbox does not reach the open web.
+
+Artifact anti-patterns:
+
+- Do not include auth tokens, API keys, private URLs, teacher credentials, or hidden tracking code.
+- Do not use eval-style code or remote scripts to bypass review.
+- Do not reach into parent windows, cookies, local storage, or teacher storage directly.
+- Do not mark an artifact mobile-ready unless it actually works at phone width.
+- Do not build a full marketplace object inside one lesson block. For reuse now, save the block content to the teacher artifact library; community artifacts remain prebuilt/reviewed previews until publishing moderation exists.
 
 ## Lesson Design Patterns
 

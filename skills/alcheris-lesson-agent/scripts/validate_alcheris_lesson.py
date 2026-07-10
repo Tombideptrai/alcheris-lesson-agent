@@ -54,12 +54,16 @@ CUSTOM_OPTIONAL_EVENTS = {
 HEADING_TYPES = {"h1", "h2", "h3", "h4", "h5", "h6"}
 BEAT_ACTIVITY_TYPES = {
     "quiz", "cloze", "sequence", "flashcard", "snippet", "coding", "data-lab",
-    "interaction", "canvas", "mindmap", "comparison", "essay", "custom_activity", "checkpoint",
+    "interaction", "canvas", "mindmap", "comparison", "essay", "custom_activity", "artifact", "checkpoint",
 }
 
 CUSTOM_ALLOWED_EVENTS = CUSTOM_BASELINE_EVENTS | CUSTOM_OPTIONAL_EVENTS
 CUSTOM_EMITS = {"submitted", "completed", "score_changed"}
 CUSTOM_SIGNALS = {"submission_status", "score", "completion_status"}
+ARTIFACT_MOBILE_MODES = {"full", "viewer", "simplified", "desktop_recommended", "desktop_required"}
+ARTIFACT_COMPLETION_TYPES = {"none", "manual", "on_interaction", "on_submit"}
+ARTIFACT_RUNTIME = "html_sandbox"
+ARTIFACT_MAX_INLINE_BYTES = 200 * 1024
 
 
 def request_json(method: str, url: str, token: str | None = None, payload: dict | None = None) -> dict:
@@ -143,6 +147,15 @@ def is_json_compatible(value) -> bool:
     if isinstance(value, dict):
         return all(isinstance(key, str) and is_json_compatible(item) for key, item in value.items())
     return False
+
+
+def artifact_file_content(file_data) -> str | None:
+    if isinstance(file_data, str):
+        return file_data
+    if isinstance(file_data, dict):
+        content = file_data.get("content", file_data.get("code", ""))
+        return content if isinstance(content, str) else None
+    return None
 
 
 def validate_custom_activity(content: dict, label: str, warnings: list[str], errors: list[str]) -> None:
@@ -259,6 +272,93 @@ def validate_custom_activity(content: dict, label: str, warnings: list[str], err
             warnings.append(f"{label}: unsupported provided signal {signal}")
 
 
+def validate_artifact(content: dict, label: str, warnings: list[str], errors: list[str]) -> None:
+    if not isinstance(content, dict):
+        errors.append(f"{label}: artifact content must be an object")
+        return
+    if not is_json_compatible(content):
+        errors.append(f"{label}: artifact content must contain only JSON-compatible values")
+
+    if content.get("type") != "artifact":
+        errors.append(f"{label}: artifact content.type must be artifact")
+    if not has_text(content.get("title")):
+        errors.append(f"{label}: artifact needs a title")
+    if not re.match(r"^\d+\.\d+\.\d+$", str(content.get("version") or "")):
+        errors.append(f"{label}: artifact version should use semantic format like 1.0.0")
+    if content.get("runtime") != ARTIFACT_RUNTIME:
+        errors.append(f"{label}: artifact runtime must be {ARTIFACT_RUNTIME}")
+
+    files = content.get("files") or {}
+    if not isinstance(files, dict) or not files:
+        errors.append(f"{label}: artifact files must be a non-empty object")
+        files = {}
+    else:
+        total_size = 0
+        for path, body in files.items():
+            if not has_text(path) or not str(path).startswith("/"):
+                errors.append(f"{label}: artifact file path {path!r} must start with /")
+            body_text = artifact_file_content(body)
+            if body_text is None:
+                errors.append(f"{label}: artifact file {path!r} must be text or an object with text content")
+                continue
+            total_size += len(body_text.encode("utf-8"))
+            if "<script src=" in body_text.lower():
+                warnings.append(f"{label}: artifact file {path!r} references an external script; prefer bundled code and keep network off")
+        if total_size > ARTIFACT_MAX_INLINE_BYTES:
+            errors.append(f"{label}: artifact inline files exceed {ARTIFACT_MAX_INLINE_BYTES} bytes")
+
+    entry = content.get("entry")
+    if not has_text(entry) or entry not in files:
+        errors.append(f"{label}: artifact entry must point to an existing file")
+
+    targets = content.get("renderTargets") or {}
+    for target in ("editorBlock", "fullPanel", "playerDesktop", "playerMobile"):
+        if targets.get(target) is not True:
+            errors.append(f"{label}: renderTargets.{target} must be true")
+
+    mobile = content.get("mobileBehavior") or {}
+    if mobile.get("mode") not in ARTIFACT_MOBILE_MODES:
+        errors.append(f"{label}: mobileBehavior.mode is required and must be supported")
+    if mobile.get("mode") == "full" and mobile.get("layout") == "fixed":
+        warnings.append(f"{label}: artifact is marked mobile full but layout is fixed")
+
+    submission = content.get("submission") or {}
+    enabled = submission.get("enabled")
+    mode = submission.get("mode")
+    if not isinstance(enabled, bool):
+        errors.append(f"{label}: submission.enabled must be true or false")
+    if mode not in CUSTOM_SUBMISSION_MODES:
+        errors.append(f"{label}: submission.mode is required and must be supported")
+    if enabled is False and mode != "none":
+        errors.append(f"{label}: submission.mode must be none when submission.enabled is false")
+    if enabled is True and submission.get("storage") != "alcheris_managed":
+        errors.append(f"{label}: submission.storage must be alcheris_managed")
+
+    completion = content.get("completion") or {}
+    if completion.get("type") not in ARTIFACT_COMPLETION_TYPES:
+        errors.append(f"{label}: completion.type is required and must be supported")
+
+    events = (content.get("analytics") or {}).get("events") or []
+    if not isinstance(events, list):
+        errors.append(f"{label}: analytics.events must be a list")
+    else:
+        missing = sorted(CUSTOM_BASELINE_EVENTS - set(events))
+        if missing:
+            errors.append(f"{label}: analytics.events missing baseline events {missing}")
+        for event in events:
+            if event not in CUSTOM_ALLOWED_EVENTS:
+                warnings.append(f"{label}: analytics event {event} is not in the artifact contract")
+
+    security = content.get("security") or {}
+    if security.get("sandbox") is not True:
+        errors.append(f"{label}: security.sandbox must be true")
+    if security.get("allowStorage") is not False:
+        errors.append(f"{label}: security.allowStorage must be false")
+    for flag in ("allowNetwork", "allowClipboard"):
+        if not isinstance(security.get(flag), bool):
+            errors.append(f"{label}: security.{flag} must be true or false")
+
+
 def validate_block(block: dict, page_index: int, block_index: int, warnings: list[str], errors: list[str]) -> None:
     btype = block.get("type")
     content = block.get("content") or {}
@@ -372,6 +472,8 @@ def validate_block(block: dict, page_index: int, block_index: int, warnings: lis
             warnings.append(f"{label}: essay should include positive minWords")
     elif btype == "custom_activity":
         validate_custom_activity(content, label, warnings, errors)
+    elif btype == "artifact":
+        validate_artifact(content, label, warnings, errors)
     elif btype == "data-lab":
         if not content.get("cells"):
             errors.append(f"{label}: data-lab needs cells")
@@ -454,6 +556,7 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
         "flashcard",
         "essay",
         "custom_activity",
+        "artifact",
         "coding",
         "data-lab",
         "interaction",
@@ -504,10 +607,11 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
                 "ui-project": {"coding"},
                 "data-lab": {"data-lab"},
                 "illustration": {"illustration"},
+                "artifact": {"artifact"},
             }.get(mode)
             if allowed and any(t not in allowed for t in right_types):
                 warnings.append(f"page {pi + 1}: rightPanelMode {mode} has non-workspace block types {right_types}")
-            if mode in {"essay", "exam", "data-lab", "code-practice", "ui-project", "illustration"} and len(right) != 1:
+            if mode in {"essay", "exam", "data-lab", "code-practice", "ui-project", "illustration", "artifact"} and len(right) != 1:
                 warnings.append(f"page {pi + 1}: full-panel mode {mode} should usually have exactly one right-panel block")
         elif len(right) == 1:
             right_type = right[0].get("type")
@@ -516,6 +620,7 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
                 "essay": "essay",
                 "data-lab": "data-lab",
                 "illustration": "illustration",
+                "artifact": "artifact",
                 "coding": "code-practice or ui-project",
             }
             if right_type in suggested_modes:

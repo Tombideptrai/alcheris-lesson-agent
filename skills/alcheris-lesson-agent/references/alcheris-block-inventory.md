@@ -81,7 +81,8 @@ Use `table` for ingredient lists, `callout` for rules and traps, `sequence` for 
 - `flashcard`: memory checks only: vocabulary, definitions, commands, formulas, key distinctions, symbols. Do not use for complex explanation. Each card supports an `image` (URL) and `imagePosition` (0-100) - add images for vocabulary, objects, and places rather than text-only cards.
 - `essay`: long-form writing or open response.
 - `custom_activity`: structured teacher-defined activity built from safe JSON primitives such as instructions, short/long text, choice, checklist, file upload reference, and submit. Use when one activity needs multiple fields, review rules, mobile behavior, completion rules, analytics events, or checkpoint signals. Do not include executable code.
-- `checkpoint`: reveal solution, sync/compare state, staged answer reveal, recovery point.
+- `artifact`: sandboxed HTML/CSS/JS learning object, like a Notion-style artifact inside the lesson editor/player. Use when the learning object needs a custom interface or simulation that native blocks cannot express, but still must obey Alcheris render targets, mobile behavior, completion, submission, analytics, and security rules. `allowNetwork` is off by default; artifacts reach Alcheris-managed asset URLs (teacher assets) only. Students cannot edit artifact source code - authoring is teacher/admin only. Do not use it for auth, arbitrary storage access, hidden tracking, unsandboxed scripts, or bypassing native block contracts.
+- `checkpoint`: reveal solution, sync/compare state, staged answer reveal, recovery point. In guided flow, use `checkpoint` explicitly when a page should PAUSE and force the learner to reveal/confirm before continuing - it is the designed "gate" block for staged reveal. (The runtime is still adding per-block trigger rules for code/data-lab/artifact; author with the gate intent even where the enforcement isn't fully wired yet.)
 
 ### Interactive And Visual Thinking
 
@@ -129,6 +130,7 @@ Use `rightPanelMode` intentionally:
 - `ui-project`: use when the learner builds a small interface or frontend project with preview. Right panel should be one immersive `coding` block. Left panel should contain design brief, acceptance criteria, assets, states, and interaction requirements.
 - `data-lab`: use when the learner explores data through notebook-like steps. Right panel should be one `data-lab` block. Left panel should contain the question, dataset description, variable guide, analysis checklist, and expected outputs.
 - `illustration`: use when motion, staged reveal, or visual transformation is the main teaching object. Right panel should be one `illustration` block. Left panel should contain the purpose, observation prompts, legend/key, and follow-up question. Keep text inside the illustration minimal.
+- `artifact`: use when the right side is one custom HTML/CSS/JS learning object. Right panel should be one `artifact` block. Left panel should contain the learning purpose, instructions, success criteria, mobile note if needed, and any model/checklist the artifact depends on.
 
 If a page has many ordinary right-panel activities, keep `standard`. If the right side is the main workspace, use the matching full-panel mode.
 
@@ -140,6 +142,7 @@ Use this quick test:
 - One coding workspace: `code-practice` or `ui-project`.
 - One notebook/data exploration workspace: `data-lab`.
 - One animated or staged visual workspace: `illustration`.
+- One custom sandboxed HTML/CSS/JS learning object: `artifact`.
 - Reading or reference only: single/blog-style page, not split.
 
 ## Selection Heuristics
@@ -151,6 +154,7 @@ Use this quick test:
 - Need learners to inspect a visual, product, chart, diagram, screenshot, or before/after state: use `image`, `gallery`, `comparison`, `canvas`, or `illustration`.
 - Need learners to annotate, connect, sketch, or map visual reasoning: use `canvas` or `mindmap`.
 - Need learners to manipulate a live concept or parameter: use `interaction`, `data-lab`, or `coding`.
+- Need a reusable custom interface, simulation, drag/drop micro-tool, or generated HTML/JS artifact that native blocks cannot express: use `artifact`.
 - Need learners to produce final written work: use `essay`.
 - Need learners to complete a structured multi-field submission, such as choose a stance + write an argument + attach evidence + submit for review: use `custom_activity`.
 - Need learners to produce final code or UI work: use `coding` in the matching full-panel mode.
@@ -186,3 +190,4 @@ Vocabulary presentation: never a single long flat table - it is exhausting to sc
 - Do not leave blocks with default labels, empty content, placeholder options, or generic titles.
 - Do not use full-panel illustration for text-heavy teaching. It is for staged visuals.
 - Do not use `custom_activity` for arbitrary plugin code, custom render functions, scripts, or storing student work inside the block definition.
+- Do not use `artifact` to bypass Alcheris rules. It must be sandboxed, mobile-aware, teacher/admin-authored, teacher-reusable, network-off by default, and communicate only through the Alcheris artifact bridge.

@@ -1,8 +1,12 @@
-# Alcheris Learning Beats (Mobile Path)
+# Alcheris Learning Beats (Guided Flow)
 
-Alcheris is a self-study product. Many learners open lessons on a phone. A desktop page
-has two panels (left teaches, right acts); a phone has one column. Alcheris bridges the
-two with **learning beats**.
+Alcheris is a self-study product. Many learners open lessons on a phone; desktop learners
+can also toggle **guided flow** (the Layers button in the player header) to step through
+the same one-column, block-by-block path. Both experiences run the same learning-beats
+engine - so beat quality decides both, not just the mobile view.
+
+A desktop page has two panels (left teaches, right acts); phones and guided desktop have
+one column. Alcheris bridges the two with **learning beats**.
 
 A learning beat is a small teaching unit, one layer above blocks:
 
@@ -10,11 +14,41 @@ A learning beat is a small teaching unit, one layer above blocks:
 setup / explanation  ->  model / example  ->  practice  ->  feedback / summary
 ```
 
-On mobile, the lesson is rendered as a sequence of beats, not as two panels. The agent
-that authors the lesson usually does not set beats by hand - the app auto-generates them.
-But **beat quality is decided by authoring choices the agent controls.** A lesson that
-reads well on desktop can collapse into a broken mobile path if blocks are ordered or
-grouped carelessly. Design for beats, then let auto-generation do the rest.
+On mobile (and in desktop guided flow), the lesson is rendered as a sequence of beats,
+not as two panels. The agent that authors the lesson usually does not set beats by hand -
+the app auto-generates them. But **beat quality is decided by authoring choices the agent
+controls.** A lesson that reads well on canvas desktop can collapse into a broken guided
+path if blocks are ordered or grouped carelessly. Design for beats, then let
+auto-generation do the rest.
+
+Guided flow also reveals blocks **one at a time**, with a Continue button between them.
+This means each block needs to stand on its own visually - do not rely on the surrounding
+blocks being visible for context; put the framing in the block's title, heading, or
+first sentence.
+
+**Answer-gate contract.** In guided flow, `quiz`, `cloze`, `sequence`, `essay`,
+`custom_activity`, and `interaction` blocks HARD-BLOCK progression until the learner
+completes them. Every gated block must be completable end-to-end (quiz with a valid
+answer, cloze with bracketed answers + wordBank, >=2 real sequence items, essay with
+prompt, custom_activity with a working submit step, interaction that is resolvable). A
+gated block that cannot be completed silently traps the learner. Prefer non-gated
+equivalents (text/callout/image/illustration/chart) for decorative blocks not meant to
+be completed.
+
+**Empty text blocks are silently filtered** in the player (`text | paragraph | h1-h6 |
+quote | code` with no content). An empty block leaves no visible hole to catch during
+editor preview, so do not ship placeholder-only text/heading blocks assuming they'll be
+visible - they won't.
+
+**Fork-friendly authoring (student notebooks).** Students can save any block into their
+personal notebook. The notebook stores a **frozen snapshot** of the block at fork time,
+so a student's saved copy stays valid even after the teacher edits the lesson. Author
+every block to be MEANINGFUL WHEN DETACHED from the surrounding page: a callout carries
+its own rule, a worked example carries problem + solution, a flashcard teaches without
+the lesson context, an interaction includes title + observation prompt inside the
+widget. This is the same rule as the guided-flow one-block-at-a-time reveal - both
+flatten out contextual dependencies. Blocks that only make sense next to their
+neighbours become unusable notebook items.
 
 ## How beats are generated
 
@@ -54,9 +88,9 @@ Follow these so auto-generation produces a clean mobile path:
 
 | Behavior | Blocks | Meaning |
 | --- | --- | --- |
-| `full` (mobile-native) | text/headings/quote/callout/accordion, image, video, gallery, quiz, cloze, sequence, flashcard, checkpoint, `interaction` (graph/distribution/equation), inline coding, small essay | Works fully on mobile |
+| `full` (mobile-native) | text/headings/quote/callout/accordion, image, video, gallery, quiz, cloze, sequence, flashcard, checkpoint, `interaction` (graph/distribution/equation), responsive `artifact`, inline coding, small essay | Works fully on mobile |
 | `viewer` | `canvas`, `mindmap`, `comparison`, `illustration`, pdf | Read/watch only on phone |
-| `desktop_recommended` | `data-lab`, `embed`, immersive `coding`, essay > 600 words | Usable but better on desktop |
+| `desktop_recommended` | `data-lab`, `embed`, immersive `coding`, complex `artifact`, essay > 600 words | Usable but better on desktop |
 
 Override per block with `content.mobileBehavior` (`full | viewer | simplified |
 desktop_recommended | desktop_required`).
@@ -66,6 +100,10 @@ mobile, prefer `interaction` widgets - they are `full`. Treat `canvas`, `illustr
 `comparison`, and `mindmap` as watch-only on phones: still great, but do not make phone
 lesson completion depend on manipulating them. If a block is genuinely desktop-only,
 mark it `desktop_required` on purpose rather than shipping a cramped fake.
+
+`artifact` blocks follow `content.mobileBehavior.mode`. Use `full` only when the artifact
+is responsive and touch-friendly, `viewer` when it is read/watch only, and
+`desktop_required` when the learning action truly cannot be completed on a phone.
 
 ## Setting beats explicitly (override)
 
