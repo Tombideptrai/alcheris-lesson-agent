@@ -56,6 +56,12 @@ BEAT_ACTIVITY_TYPES = {
     "quiz", "cloze", "sequence", "flashcard", "snippet", "coding", "data-lab",
     "interaction", "canvas", "mindmap", "comparison", "essay", "custom_activity", "artifact", "checkpoint",
 }
+PRACTICE_BLOCK_TYPES = {
+    "quiz", "cloze", "sequence", "flashcard", "essay", "coding", "data-lab",
+    "custom_activity", "artifact", "checkpoint",
+}
+PRODUCTION_BLOCK_TYPES = {"essay", "coding", "data-lab", "custom_activity", "artifact"}
+EXPLORATORY_BLOCK_TYPES = {"interaction", "illustration", "comparison", "canvas", "mindmap"}
 
 CUSTOM_ALLOWED_EVENTS = CUSTOM_BASELINE_EVENTS | CUSTOM_OPTIONAL_EVENTS
 CUSTOM_EMITS = {"submitted", "completed", "score_changed"}
@@ -90,6 +96,18 @@ def authenticate(base_url: str, username: str, password: str) -> str:
 
 def has_text(value) -> bool:
     return isinstance(value, str) and bool(value.strip())
+
+
+def sequence_item_text(item) -> str:
+    if isinstance(item, str):
+        return item
+    if not isinstance(item, dict):
+        return ""
+    for key in ("text", "content", "label", "sentence", "step", "value", "body", "title"):
+        value = item.get(key)
+        if has_text(value):
+            return value
+    return ""
 
 
 def strip_html(value: str) -> str:
@@ -452,7 +470,7 @@ def validate_block(block: dict, page_index: int, block_index: int, warnings: lis
         if len(items) < 2:
             errors.append(f"{label}: sequence needs at least 2 items")
         for ii, item in enumerate(items):
-            text = item.get("text") if isinstance(item, dict) else item
+            text = sequence_item_text(item)
             if not has_text(text):
                 errors.append(f"{label}, item {ii + 1}: empty sequence item")
     elif btype == "cloze":
@@ -549,6 +567,11 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
     has_chart = False
     has_interaction = False
     mc_indices = []
+    practice_count = 0
+    production_count = 0
+    quiz_question_types = []
+    practice_item_count = 0
+    weak_production_candidates = 0
     active_blocks = {
         "quiz",
         "cloze",
@@ -597,6 +620,12 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
                     f"page {pi + 1}: split page has {len(right_activities)} right-panel activities but no left-panel headings; "
                     "mobile beats will chunk the left panel blindly - add one heading per teaching point (see references/alcheris-learning-beats.md)"
                 )
+            misplaced_exploration = [b.get("type") for b in right if b.get("type") in {"interaction", "comparison", "canvas", "mindmap"}]
+            if misplaced_exploration:
+                warnings.append(
+                    f"page {pi + 1}: right panel contains exploratory block(s) {misplaced_exploration}; "
+                    "put exploratory interactions with teaching/source material on the left unless the block is explicitly a learner task"
+                )
 
         if mode != "standard":
             right_types = [b.get("type") for b in right]
@@ -637,8 +666,31 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
                 has_chart = True
             if block.get("type") in active_blocks:
                 active_count += 1
+            if block.get("type") in PRACTICE_BLOCK_TYPES:
+                practice_count += 1
+                content = block.get("content") or {}
+                if block.get("type") == "quiz":
+                    practice_item_count += len(content.get("questions") or [])
+                elif block.get("type") == "cloze":
+                    practice_item_count += max(1, (content.get("text") or "").count("["))
+                elif block.get("type") == "sequence":
+                    practice_item_count += len(content.get("items") or [])
+                elif block.get("type") == "flashcard":
+                    practice_item_count += len(content.get("cards") or [])
+                else:
+                    practice_item_count += 1
+            if block.get("type") in PRODUCTION_BLOCK_TYPES:
+                production_count += 1
             if block.get("type") == "quiz":
                 for q in (block.get("content") or {}).get("questions", []):
+                    qtype = q.get("type") or "multiple_choice"
+                    quiz_question_types.append(qtype)
+                    if qtype == "short_answer":
+                        question_text = (q.get("question") or "").lower()
+                        if contains_any(question_text, ("write", "describe", "explain", "analyze", "analyse", "justify", "decide", "create", "produce", "solve")):
+                            production_count += 1
+                        else:
+                            weak_production_candidates += 1
                     if (q.get("type") or "multiple_choice") == "multiple_choice" and isinstance(q.get("correctAnswerIndex"), int):
                         mc_indices.append(q["correctAnswerIndex"])
             validate_block(block, pi, bi, warnings, errors)
@@ -695,9 +747,44 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
                 "shuffle each question's options so the correct answer is distributed across positions"
             )
 
+    if active_count and practice_count == 0:
+        warnings.append(
+            "lesson has active/exploratory blocks but no practice blocks; add quiz, cloze, sequence, flashcard, essay, coding, data-lab, custom_activity, artifact, or checkpoint practice"
+        )
+
+    if practice_count and production_count == 0:
+        warnings.append(
+            "lesson has practice but no production task; every taught skill should make the learner write, build, solve, code, submit, or otherwise produce something"
+        )
+
+    if practice_count and practice_item_count < 6:
+        warnings.append(
+            f"lesson has only {practice_item_count} practice item(s); practice may be too shallow for pattern memory - add denser guided/constrained/varied practice"
+        )
+
+    if weak_production_candidates and production_count == 0:
+        warnings.append(
+            "short_answer questions are present, but they do not clearly ask learners to write/describe/analyze/justify/solve/create; treat them as knowledge checks, not production"
+        )
+
+    if contains_any(lesson_text, ("model answer", "sample answer", "answer key")) and not contains_any(lesson_text, ("after you try", "after your attempt", "reveal", "checkpoint", "compare your answer", "after writing")):
+        warnings.append(
+            "model/sample answers appear in the lesson; ensure the exact task model is revealed after the learner attempts, not before"
+        )
+
+    if len(quiz_question_types) >= 4:
+        mc_like = sum(1 for qtype in quiz_question_types if qtype == "multiple_choice")
+        if mc_like / len(quiz_question_types) >= 0.8:
+            warnings.append(
+                f"{mc_like}/{len(quiz_question_types)} quiz questions are multiple_choice; add short_answer, multiple_select, cloze, sequence, or production practice"
+            )
+
     if active_count == 0:
         errors.append("lesson has no active learning blocks")
     summary["active_blocks"] = active_count
+    summary["practice_blocks"] = practice_count
+    summary["production_tasks"] = production_count
+    summary["practice_items"] = practice_item_count
     summary["has_image"] = has_image
     return warnings, errors, summary
 

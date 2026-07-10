@@ -8,6 +8,12 @@ Use $alcheris-lesson-agent and the Alcheris MCP to create a self-study lesson fr
 Requirements:
 - Preserve every important concept from the source.
 - Use a clear learner-facing structure.
+- Use split layout on pages with practice: left = encounter/explore/understand, right = quiz/cloze/sequence/essay/code/data-lab/production.
+- Put exploratory interactions such as graphs, sliders, hotspot images, staged visuals, and comparisons with the explanation/source material, not in the practice panel unless they are explicitly the task.
+- Keep any chart/image/source needed for practice visible on the page while students practise; add per-question/card images when a practice item refers to that visual.
+- Use many small pages for rich source material, one micro-skill per page where possible.
+- Build dense practice: guided checks, constrained practice, varied practice, then production. Do not stop at one quiz.
+- Reveal the exact model answer after the learner attempts, not before.
 - Choose blocks from the Alcheris block inventory.
 - Use full-panel modes when the right side is the main workspace.
 - Validate the saved lesson and check the learner route before you finish.
@@ -26,6 +32,9 @@ Find:
 - skipped source stages,
 - right-panel mode mistakes,
 - missing media or source material.
+- exploratory interactions placed in the practice panel,
+- practice that is too shallow or only multiple choice,
+- missing production tasks.
 
 Then repair the lesson and validate it.
 ```
@@ -105,5 +114,10 @@ Run the validator, inspect the learner route, and report:
 - panel modes,
 - empty or weak blocks,
 - source stages that were skipped,
+- source coverage,
+- practice ladder depth,
+- production vs knowledge-check mistakes,
+- model-answer timing,
+- persona consistency,
 - changes still recommended before publishing.
 ```

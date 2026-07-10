@@ -5,7 +5,7 @@ can also toggle **guided flow** (the Layers button in the player header) to step
 the same one-column, block-by-block path. Both experiences run the same learning-beats
 engine - so beat quality decides both, not just the mobile view.
 
-A desktop page has two panels (left teaches, right acts); phones and guided desktop have
+A desktop practice page has two panels (left teaches/explores, right practises); phones and guided desktop have
 one column. Alcheris bridges the two with **learning beats**.
 
 A learning beat is a small teaching unit, one layer above blocks:
@@ -28,12 +28,14 @@ first sentence.
 
 **Answer-gate contract.** In guided flow, `quiz`, `cloze`, `sequence`, `essay`,
 `custom_activity`, and `interaction` blocks HARD-BLOCK progression until the learner
-completes them. Every gated block must be completable end-to-end (quiz with a valid
-answer, cloze with bracketed answers + wordBank, >=2 real sequence items, essay with
-prompt, custom_activity with a working submit step, interaction that is resolvable). A
-gated block that cannot be completed silently traps the learner. Prefer non-gated
-equivalents (text/callout/image/illustration/chart) for decorative blocks not meant to
-be completed.
+completes or engages with them. A quiz/cloze/sequence/essay/custom_activity is practice;
+an `interaction` block is usually exploratory teaching, but it still counts as a gated
+engagement step because the learner must touch/manipulate it to continue. Every gated
+block must be completable end-to-end (quiz with a valid answer, cloze with bracketed
+answers + wordBank, >=2 real sequence items, essay with prompt, custom_activity with a
+working submit step, interaction that is resolvable/engageable). A gated block that
+cannot be completed silently traps the learner. Prefer non-gated equivalents
+(text/callout/image/illustration/chart) for decorative blocks not meant to be completed.
 
 **Empty text blocks are silently filtered** in the player (`text | paragraph | h1-h6 |
 quote | code` with no content). An empty block leaves no visible hole to catch during
@@ -58,7 +60,7 @@ The app runs `generateMobileLearningBeats(page)`:
 2. Else if `layout === "single"`: blocks are split on headings, and **every activity
    block closes the current beat**. So a beat is roughly:
    `[heading?] + explanation text/callout + one activity`.
-3. Else (split layout): **each right-panel activity anchors one beat.** Left-panel blocks
+3. Else (split layout): **each right-panel practice activity anchors one beat.** Left-panel blocks
    are attached to those beats either by heading section (when the left panel has more
    than one heading) or by even chunking (when it does not). Extra left groups become
    trailing beats.
@@ -71,10 +73,10 @@ Follow these so auto-generation produces a clean mobile path:
 
 - **Signpost with headings.** A heading starts a new beat. Put one heading per teaching
   point so beats break where the meaning breaks.
-- **Pair each activity with its explanation.** The left explanation that a right-panel
-  activity practices should sit in the same heading section (or in matching order). Do
-  not put all explanations first and all activities after.
-- **Aim for rough 1:1.** When a split page has N right-panel activities, provide about N
+- **Pair each practice activity with its explanation.** The left explanation/exploration
+  that a right-panel activity practises should sit in the same heading section (or in
+  matching order). Do not put all explanations first and all activities after.
+- **Aim for rough 1:1.** When a split page has N right-panel practice activities, provide about N
   left-panel heading sections. This lets the generator map explanation -> activity
   cleanly instead of chunking blindly.
 - **Order within a panel matters.** Setup before model before practice, top to bottom.

@@ -9,6 +9,10 @@ interactive it is; a persona makes it feel like a person is teaching you.
 
 - The lesson (or course) declares ONE persona. Write **every** learner-facing string in
   it, consistently, from the first hook to the last reflection.
+- Persona is a required preflight decision. If the user has not specified a persona,
+  voice, audience vibe, or character inspiration, ask for one before writing
+  learner-facing lesson content. If the user gave enough signal to infer it, briefly
+  declare the inferred persona and proceed. Do not silently default to a generic voice.
 - The voice never changes the pedagogy. Realize -> understand -> apply, correct answers,
   worked examples, and difficulty stay exactly the same. Persona changes *how* it sounds,
   not *what* is true.

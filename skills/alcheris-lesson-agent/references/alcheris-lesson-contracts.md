@@ -58,9 +58,17 @@ Alcheris lessons are student-facing self-study lessons by default. Do not build 
 
 Choose the page layout from the learning action:
 
-- Use single or blog-style layout when the learner is mainly reading or reviewing one continuous explanation, model, article, chart, reference, or answer key.
-- Use split layout when the learner needs guidance or source material beside an action.
-- Use split layout with a full-panel right mode when the learner needs one focused workspace.
+- Use single or blog-style layout only when the page has no practice/check/application/production task. Good uses include an introduction, reflection, pure reference, or one continuous explorable explanation.
+- Use split layout when the page has practice/check/application/production. The left side teaches or supplies source/exploration; the right side is the learner's practice/floating panel.
+- Use split layout with a full-panel right mode when the right side is one focused practice/workspace desk.
+
+Alcheris has two interaction categories:
+
+- Exploratory interactions: graph/distribution/equation explorers, hotspot images, staged illustrations, comparisons, canvas replays, mindmaps, and visual/source inspection. These help the learner encounter or understand an idea and usually belong on the left.
+- Practice interactions: quiz, cloze, sequence, flashcard, essay, coding, data-lab, custom_activity, artifact, checkpoint, or any task where the learner answers, arranges, writes, codes, submits, or produces. These belong on the right/floating panel.
+- `artifact` can be exploratory, practice, or production depending on the custom interface. If the native block inventory cannot express the intended learning experience well enough, create a sandboxed artifact instead of forcing a weak native-block fit.
+
+Do not put the main exploratory stimulus above the right-panel practice. The two-panel design lets learners look up the source, guidance, criteria, and explanatory visuals while practising. If a right-panel question/card needs a visual, include an `image` inside that quiz question or flashcard card too.
 
 Left panel is for learner-facing guidance and input:
 
@@ -69,12 +77,15 @@ Left panel is for learner-facing guidance and input:
 - concept explanation
 - models and worked examples
 - images/charts/source texts
+- exploratory interactions such as `interaction` graph/distribution/equation blocks
 - hints, self-checks, and answer reveal accordions
 - optional Vietnamese support notes for the learner
 
 Important models, worked examples, and explanations should be directly visible as `text` or `callout` blocks. Use `accordion` for optional answer reveals, extra details, or self-checks, not as the only place where the model answer exists.
 
-Right panel is for student action:
+For the exact task the learner is about to attempt, reveal the model answer after the learner tries. Put the task's model answer behind a checkpoint, accordion, answer reveal, or follow-up beat/page. Before the attempt, provide criteria, language bank, checklist, worked example, or a different model that teaches the pattern without giving away the learner's answer.
+
+Right panel is for student practice/action:
 
 - quiz
 - cloze
@@ -85,7 +96,7 @@ Right panel is for student action:
 - data-lab
 - illustration
 - checkpoint
-- canvas, mindmap, interaction, comparison, embed, gallery, or other active/source blocks when they create learner action
+- canvas, mindmap, comparison, embed, gallery, or other active/source blocks only when they create learner action rather than merely explaining
 
 If a page is `layout: "split"`, both panels should have visible content unless the user explicitly asks otherwise.
 
@@ -94,7 +105,7 @@ Panel anti-patterns:
 - Do not put only explanation in the right panel and only a decorative heading in the left panel.
 - Do not place the only important model answer in a collapsed accordion.
 - Do not make the right panel a random pile of activities. Each right-panel block should practice the current left-panel teaching point.
-- Do not use split layout for a long uninterrupted reading page unless the right side has a meaningful action.
+- Do not use split layout for a long uninterrupted reading page unless the right side has meaningful practice/action.
 
 ## Full-Panel Modes
 
@@ -103,11 +114,11 @@ Use `rightPanelMode: "standard"` for normal split pages with multiple ordinary r
 Use non-standard modes only for immersive right-side work. The right panel should usually contain exactly one compatible workspace block. The left panel must prepare or support that workspace.
 
 - `essay`: use when the learner writes, rewrites, plans, or revises one substantial response. Right panel should contain one `essay` block. Left panel should contain source material, prompt, structure, vocabulary, model, checklist, rubric, or common mistakes.
-- `exam`: use when the learner works through one focused quiz workspace. This includes diagnostics, checkpoints, mastery checks, structured practice, mock tests, and formal exams. Right panel should contain exactly one `quiz` block. The quiz block may use `content.mode: "practice"` for per-question checks and explanations, or `content.mode: "exam"` for whole-quiz submission. Left panel should contain source material, instructions, timing, scoring criteria, hints, or final reminders.
+- `exam`: use when the learner works through one focused question desk. This includes diagnostics, checkpoints, mastery checks, structured practice, mock tests, and formal exams. Use it when the right side is just the unified question set and does not need mixed right-panel text/reminder blocks. Right panel should contain exactly one `quiz` block. The quiz block may use `content.mode: "practice"` for per-question checks and explanations, or `content.mode: "exam"` for whole-quiz submission. Left panel should contain source material, instructions, timing, scoring criteria, hints, or final reminders.
 - `code-practice`: use when the learner solves one focused coding task. Right panel should contain one non-inline `coding` block. Left panel should contain task goal, starter context, constraints, API/syntax reference, examples, tests, and hints.
 - `ui-project`: use when the learner builds or edits an interface with preview. Right panel should contain one non-inline `coding` block. Left panel should contain design brief, required states, assets, acceptance criteria, and interaction notes.
 - `data-lab`: use when the learner works through notebook-like data exploration. Right panel should contain one `data-lab` block. Left panel should contain dataset context, variable guide, analysis question, expected output, and interpretation checklist.
-- `illustration`: use when the main learning object is animated or staged visual explanation. Right panel should contain one `illustration` block. Left panel should contain purpose, observation prompts, legend/key, and after-view question.
+- `illustration`: use when the main learning object is animated or staged visual explanation. Prioritize full-panel illustration mode. Right panel should contain one `illustration` block. Left panel should contain purpose, observation prompts, legend/key, and after-view question. A normal inline illustration is acceptable only when it is small/simple and there is a clear reason.
 - `artifact`: use when the learner works with one sandboxed custom HTML/CSS/JS learning object. Right panel should contain one `artifact` block. Left panel should contain purpose, instructions, success criteria, mobile note when relevant, and any supporting model/checklist.
 
 Keep `standard` mode when the right side contains several normal activity blocks such as quiz plus sequence, quiz plus standalone cloze, flashcard plus quick check, short canvas task plus quiz, or other mixed task families. Do not put quiz plus flashcards plus text into `essay`, `data-lab`, or another non-quiz immersive mode. Those modes make the entire right panel behave like a workspace.
@@ -329,7 +340,7 @@ Custom activity anti-patterns:
 
 ## Artifact Contract
 
-Use `artifact` when the learner needs a custom interactive object that native Alcheris blocks cannot express: a generated HTML/CSS/JS simulation, drag/drop micro-tool, reusable classroom widget, or custom visual practice panel. It is not a free plugin host. The artifact runs inside an iframe sandbox and talks to Alcheris through the artifact bridge only.
+Use `artifact` when the learner needs a custom interactive object that native Alcheris blocks cannot express well enough: a generated HTML/CSS/JS simulation, exploratory manipulative, drag/drop micro-tool, reusable classroom widget, custom visual practice panel, structured production desk, or other purpose-built learning interface. It can be exploratory, practice, or production. It is not a free plugin host. The artifact runs inside an iframe sandbox and talks to Alcheris through the artifact bridge only.
 
 Required top-level shape:
 
@@ -412,7 +423,8 @@ Required shape:
 3. Show what belongs and what must be excluded.
 4. Give a model and, when useful, a weak non-example.
 5. Add a guided recognition task before asking the learner to produce it.
-6. Add a production task with a checklist, rubric, or model reveal.
+6. Add constrained practice with enough items to build fluency; the count depends on the skill, but one shallow exercise is not enough.
+7. Add a production task with a checklist, rubric, or model reveal.
 
 Good block choices:
 
@@ -421,19 +433,21 @@ Good block choices:
 - `quiz`: recognize correct/incorrect choices.
 - `sequence`: order the procedure after the procedure has been explained.
 - `cloze`: practice constrained wording with accepted alternatives.
-- `essay` or short-answer `quiz`: final production.
+- `essay`, `custom_activity`, coding/data-lab, or a genuine production-style short-answer task: final production.
+
+For rich source material, use many small pages rather than compressing the source. Prefer one micro-skill per page with left-side teaching/support and right-side practice. IELTS Writing Task 1, coding, and data lessons often need long lessons.
 
 ### Generic Self-Study Lesson
 
-Page 1: Orient
+Page 1: Encounter
 
 - Left: outcome, task/context/source material, visible lesson path.
-- Right: quick diagnostic, simple recognition task, or interaction that activates prior knowledge.
+- Right: quick diagnostic or simple recognition task if the page checks understanding; otherwise keep the page single.
 
-Page 2: Notice or explore
+Page 2: Explore
 
-- Left: example, visual, dataset, scenario, code, text, or case.
-- Right: quiz, canvas, interaction, data-lab, comparison, or sequence that makes the learner inspect the material.
+- Left: example, visual, dataset, scenario, code, text, case, or exploratory interaction that makes the learner inspect the material.
+- Right: guided check such as quiz, sequence, cloze, or checkpoint.
 
 Page 3: Explain or model
 
@@ -465,7 +479,8 @@ Page 2: Recognize the display and logic
 Page 3: Analyze or transform
 
 - Left: h2, worked analysis, transformation rule, annotated image/table, optional answer reveal accordion.
-- Right: interaction, canvas, quiz, sequence, or cloze that makes the learner track patterns and justify choices.
+- Left also hosts exploratory interaction or canvas replay when the learner needs to track patterns visually.
+- Right: quiz, sequence, cloze, checkpoint, or short-answer task that makes the learner justify choices.
 
 Page 4: Apply and check
 
@@ -560,6 +575,7 @@ For chart lessons:
 - Add alt text.
 - Put the visual where students can inspect it while practising.
 - Repeat the visual on a writing page if the right panel is an essay workspace.
+- Any practice that depends on a chart/image/source keeps that visual visible on the page while students practise; add per-question images too when the question itself references the visual.
 
 For trend-graph lessons:
 
@@ -587,3 +603,17 @@ After writes:
 8. Confirm images render, not only the image block payload.
 9. Confirm full-panel pages show the intended workspace.
 10. Check the mobile path: mentally run beat generation (see `references/alcheris-learning-beats.md`). Each right-panel activity should pair with the explanation it practices; split pages should have roughly one left heading section per right activity; `viewer`/`desktop_recommended` blocks should be acceptable on a phone or replaced with a mobile-native alternative. Set `mobileBeatsOverride` only if clean auto-grouping is not achievable.
+
+## Builder Self-Audit
+
+Before final delivery, audit the lesson and fix issues found:
+
+1. Source coverage: every important source idea, example, rule, sub-skill, exception, and stage appears somewhere in the lesson.
+2. Practice ladder: every taught micro-skill has enough guided checks, constrained practice, varied practice, and production for learners to remember the pattern.
+3. Panel placement: practice pages are split; left teaches/explores, right practises/produces; exploratory interactions are not used as the main right-panel stimulus.
+4. Visual support: any image/chart/source needed for practice remains visible while students practise, and per-question/card images are added when useful.
+5. Block fit: movement/parameters/process/before-after use exploratory interactions; when native blocks cannot express the experience, use an artifact.
+6. Production: production asks learners to generate something, not merely choose an answer. Short-answer counts only when it genuinely asks for a sentence, analysis, decision, solution, or similar output.
+7. Model timing: exact model answers appear after the learner attempts the task.
+8. Persona: one declared persona is used consistently and does not reduce explanatory depth.
+9. Player route: inspect the student/player route when available for empty panels, cramped workspaces, rendering failures, guided-flow/mobile order, and answer-gate dead ends.

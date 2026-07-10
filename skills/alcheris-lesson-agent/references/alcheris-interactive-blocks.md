@@ -1,7 +1,9 @@
 # Alcheris Interactive Blocks
 
 These are the "alive" blocks: they animate, reveal, or let the learner manipulate the
-content directly. They exist so a lesson can be explored, not only read. Prefer them
+content directly. Most of them are **exploratory interactions**, not practice exercises:
+they help the learner encounter, inspect, and understand an idea before answering
+questions about it. Prefer them
 over a static equivalent whenever the source material has movement, parameters, a
 before/after state, or a process the learner should watch or drive.
 
@@ -15,10 +17,11 @@ mobile path in mind.
 
 ---
 
-## interaction (the highest-leverage block)
+## interaction (the highest-leverage exploratory block)
 
 One block type, four modes selected by `content.mode`. This is the block that most
-often should replace a static chart image.
+often should replace a static chart image. It is usually part of explanation/exploration
+and belongs with the teaching content, normally in the left panel on split pages.
 
 ### mode: "graph" - progressive trend reveal
 
