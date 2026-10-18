@@ -2,20 +2,48 @@
 
 ## MCP And API Notes
 
-Alcheris MCP tools usually expose lesson, page, and block operations:
+The Alcheris MCP server (`mcp-server/` in the app repo, package `alcheris-mcp`) is also served as the claude.ai Alcheris connector. Its tools, by job:
 
-- `list_lessons`
-- `get_lesson`
-- `create_lesson`
-- `update_lesson`
-- `delete_lesson`
-- `add_page`
-- `update_page`
-- `delete_page`
-- `add_block`
-- `update_block`
-- `delete_block`
-- `get_lesson_quality`
+| Job | Tools |
+|---|---|
+| Identity | `whoami` |
+| Read | `list_lessons`, `get_lesson`, `get_block_content`, `get_lesson_quality`, `get_lesson_analytics` |
+| Lesson | `create_lesson(title, description)`, `update_lesson(lesson_id, title?, description?, is_published?)`, `delete_lesson` |
+| Page | `add_page(lesson_id, title, layout="split", position?)`, `update_page(lesson_id, page_index, title?, layout?, right_panel_mode?)`, `delete_page(lesson_id, page_id)` |
+| Block | `add_block(lesson_id, page_index, panel, block_type, content?, position?, raw=False)`, `update_block(lesson_id, page_index, block_id, content, new_type?, raw=False)`, `delete_block(lesson_id, block_id)` |
+| Restructure | `move_block`, `reorder_blocks`, `save_lesson_structure` (below) |
+| Artifacts | `list_artifacts(scope)`, `save_artifact(name, definition, ...)`, `duplicate_artifact`, `add_artifact_block(lesson_id, page_index, artifact_id, panel="right", position?)` |
+| Media search | `image_search`, `video_search`, `youtube_search` |
+
+`page_index` is 0-based. `panel` is `"left"` or `"right"`. There is no duplicate-lesson tool; duplication is in the teacher UI (`POST /api/lessons/{id}/duplicate/`).
+
+### Restructure tools
+
+Every write reads the lesson, then sends the full lesson to `POST /api/lessons/{id}/autosave/` with explicit block orders and `base_revision` = the lesson's `content_revision`. Blocks keep their ids, content, learner answers, and analytics when moved.
+
+- `move_block(lesson_id, block_id, page_index?, panel?, position?)`: move within a page, to the other panel, or to another page. Omitted arguments keep the current page/panel; omitted `position` appends. `position` is counted without the moved block.
+- `reorder_blocks(lesson_id, page_index, left_ids?, right_ids?)`: the complete top-to-bottom order of a panel. An id from the other panel of the same page moves across. An omitted panel keeps its order. Every block of the page must still be placed.
+- `save_lesson_structure(lesson_id, pages, deleted_block_ids?, deleted_page_ids?)`: one atomic write of the whole lesson.
+  - `pages` lists every page to keep, in order: `{"id"?, "title"?, "layout"?: "single|split", "rightPanelMode"?: "standard|essay|exam|code-practice|data-lab|ui-project|artifact|illustration", "left": [...], "right": [...]}`. Omit `id` for a new page. Omitted title/layout/mode keep stored values.
+  - A block entry is one of: `"<block uuid>"` or `{"id": "<uuid>"}` (keep content, only place it); `{"id": "<uuid>", "content": {...}}` (replace content, `type` optional); `{"type": "quiz", "content": {...}, "id"?: "my-client-id"}` (new block; a non-uuid id is echoed in `id_map`). Add `"raw": true` to any entry to store content exactly as given.
+  - Every existing page and block must be placed or listed for deletion. Blocks on a deleted page that you place elsewhere are recreated with new ids (see `id_map`).
+  - Returns the page/block summary, the new `content_revision`, `id_map`, and `warnings` (for example right-panel blocks on a single page).
+
+### `raw` and content building
+
+Without `raw`, `add_block`, `update_block`, and new entries in `save_lesson_structure` build content: plain/markdown text becomes Lexical rich text, quiz questions are normalized, and `update_block` merges into the existing content. With `raw: true`, content is stored exactly as given (`update_block` replaces the whole content). Use `raw` for anything copied from `get_block_content`, another lesson, or a stored callout (callout `text` is a Lexical JSON string; re-sending it without `raw` would treat that JSON as plain text).
+
+Never "move" a block by deleting it and adding it again. That rebuilds rich text and loses formatting, gives the block a new id, and detaches learner answers and analytics.
+
+### Errors
+
+- `{"code": "edit_conflict"}` (HTTP 409): someone saved the lesson after you read it. Re-read, re-apply, save again.
+- `{"code": "block_contract_invalid", "block_contract_errors": [{page_index, panel, block_index, block_id, block_type, errors}]}` (HTTP 400): a `custom_activity` or `artifact` failed backend validation. Nothing was saved.
+- `{"error": "..."}`: a structure problem caught before saving (unknown block id, block not placed, bad page index).
+
+### Connector caching
+
+claude.ai caches the connector's tool list. If a tool or parameter documented here is missing, ask the user to disconnect and reconnect the Alcheris connector in claude.ai settings; a new chat alone may not refresh it.
 
 Local backend defaults:
 
@@ -65,7 +93,7 @@ Choose the page layout from the learning action:
 Alcheris has two interaction categories:
 
 - Exploratory interactions: graph/distribution/equation explorers, hotspot images, staged illustrations, comparisons, canvas replays, mindmaps, and visual/source inspection. These help the learner encounter or understand an idea and usually belong on the left.
-- Practice interactions: quiz, cloze, sequence, flashcard, essay, coding, data-lab, custom_activity, artifact, checkpoint, or any task where the learner answers, arranges, writes, codes, submits, or produces. These belong on the right/floating panel.
+- Practice interactions: quiz, cloze, sequence, flashcard, essay, branching_scenario, coding, data-lab, custom_activity, artifact, checkpoint, or any task where the learner answers, arranges, writes, codes, submits, or produces. These belong on the right/floating panel.
 - `artifact` can be exploratory, practice, or production depending on the custom interface. If the native block inventory cannot express the intended learning experience well enough, create a sandboxed artifact instead of forcing a weak native-block fit.
 
 Do not put the main exploratory stimulus above the right-panel practice. The two-panel design lets learners look up the source, guidance, criteria, and explanatory visuals while practising. If a right-panel question/card needs a visual, include an `image` inside that quiz question or flashcard card too.
@@ -92,6 +120,7 @@ Right panel is for student practice/action:
 - sequence
 - flashcard
 - essay
+- branching_scenario
 - coding
 - data-lab
 - illustration
@@ -133,7 +162,7 @@ Minimum visible content by block type:
 - `image`: `content.url` must be non-empty. Add `caption` and `altText` for teaching clarity.
 - `table`: `content.headers` and `content.rows` should be non-empty arrays. Use for structured comparisons, sentence patterns, ingredient lists, and data tables instead of flattening columns into a text block or generating a table screenshot.
 - `video`: `content.url` must be non-empty.
-- `gallery`: `content.slides` should contain visible slides.
+- `gallery`: `content.slides` should contain visible slides (`[{"url", "caption"?}]`). `content.layout` is `"carousel"` (default: one large slide with a thumbnail strip) or `"threads"` (a sideways-swipeable row of rounded cards at natural aspect ratio with peek and scroll-snap; tap opens a full-screen lightbox). Use `threads` for 3+ charts or examples learners should compare; use `carousel` to step through one image at a time. There is no `grid` layout.
 - `pdf`: include a non-empty URL or file reference.
 - `embed`: include a non-empty `embedUrl`.
 - `recording`: include a media URL for playback, or use only when the learner is meant to record.
@@ -147,8 +176,10 @@ Minimum visible content by block type:
 - `sequence`: `content.title`, `content.instructions`, and at least 2 ordered `items` are required. Each item needs text. Items must be the real sentences/steps/lines the learner reorders into a coherent whole, not abstract labels (use the actual model sentences for paragraph-order practice).
 - `cloze`: `content.title`, `content.instructions`, and `content.text` are required. Text must include bracketed answers, e.g. `The trend [increased] sharply`. For writing language practice, include alternatives such as `[rose/increased/climbed]`. Always include `content.wordBank` (an array of words the learner drags onto the blanks, with a few plausible distractors); never leave a fill-the-gap with no word list.
 - `essay`: `content.prompt` must be non-empty. Include `minWords` and `maxWords`.
+- `branching_scenario`: `content.title`, `content.prompt`, `content.startNodeId`, and `content.nodes` are required. Each node is `{id, title, body, choices: [{id, label, feedback, nextNodeId}]}`; a node with `choices: []` is an ending. `completionMode` defaults to `"on_terminal"` (completed when the learner reaches an ending). `startNodeId` must name an existing node; each `nextNodeId` must name an existing node or be left blank, which ends the scenario. Every path must reach an ending. Write real, specific feedback for each choice, not "Correct"/"Wrong". It is answer-gated in guided flow and counts toward lesson completion.
+- `chart`: `content.chartType` (`line`, `bar`, `area`, `pie`), `title`, `xKey`, `series: [{key, label, color}]`, and `data` rows (pie: `data: [{name, value}]`). Use to present data; use `interaction` mode `graph` when the learner should reveal data over time.
 - `custom_activity`: `content` is the complete safe custom activity definition. It must be JSON-compatible data only, with no executable functions, imports, closures, or arbitrary runtime code. See "Custom Activity Contract" below.
-- `artifact`: `content` is the complete sandboxed artifact definition. It contains HTML/CSS/JS files as strings plus Alcheris-managed render targets, mobile behavior, completion, submission, analytics, and security settings. See "Artifact Contract" below.
+- `artifact`: `content` is the complete sandboxed artifact definition. Build it with the `alcheris-artifact-builder` skill; see "Artifact Contract" below for placement rules.
 - `coding` or `snippet`: include `language`, `files` or `code`, and avoid immersive coding unless the right panel mode supports it.
 - `data-lab`: include non-empty `cells`.
 - `interaction`: set `content.mode` to `graph`, `distribution`, `equation`, or `embed`, plus the fields that mode requires. `graph` needs `graphData` (array of `{ id, label, value, annotation? }`) with `graphTitle`/axis labels; `distribution` needs `statMean`/`statStdDev` with `statTitle`/`statInstruction`; `equation` needs `mathExpression` with range fields and optional `gameMode`/`targets`. Full schemas and examples: `references/alcheris-interactive-blocks.md` and `data/block-contracts.json`.
@@ -340,73 +371,17 @@ Custom activity anti-patterns:
 
 ## Artifact Contract
 
-Use `artifact` when the learner needs a custom interactive object that native Alcheris blocks cannot express well enough: a generated HTML/CSS/JS simulation, exploratory manipulative, drag/drop micro-tool, reusable classroom widget, custom visual practice panel, structured production desk, or other purpose-built learning interface. It can be exploratory, practice, or production. It is not a free plugin host. The artifact runs inside an iframe sandbox and talks to Alcheris through the artifact bridge only.
+The full artifact definition contract (fields, `viewport` presets, sizing, bridge, validator rules, upload and verify steps) lives in the sibling skill `skills/alcheris-artifact-builder` (`references/contract.md`, `references/frame-and-sizing.md`, `references/upload-and-verify.md`). Build every artifact with that skill: start from its `assets/starter/`, run `scripts/validate_artifact.py`, and check the frames with `scripts/frame_check.html`. Do not hand-write a definition from memory: the host frame is a fixed `viewport` preset (`square` 1:1 or `portrait` 9:16, `scrolling: "none"`), the backend rejects arbitrary heights (`embedHeight`) and internal scroll regions, and files must stay under 200 KB. Long content is split into steps, tabs, or scenes instead of scrolling.
 
-Required top-level shape:
+What this skill decides:
 
-```json
-{
-  "type": "artifact",
-  "title": "Sentence Sorter",
-  "version": "1.0.0",
-  "runtime": "html_sandbox",
-  "entry": "/index.html",
-  "files": {
-    "/index.html": "<main>...</main>",
-    "/styles.css": "body { font-family: system-ui; }",
-    "/script.js": "window.AlcherisArtifact.complete({ score: 1 });"
-  },
-  "renderTargets": {
-    "editorBlock": true,
-    "fullPanel": true,
-    "playerDesktop": true,
-    "playerMobile": true
-  },
-  "mobileBehavior": {
-    "mode": "full",
-    "minWidth": 320,
-    "layout": "responsive"
-  },
-  "completion": {
-    "type": "on_interaction"
-  },
-  "submission": {
-    "enabled": false,
-    "mode": "none",
-    "storage": "alcheris_managed"
-  },
-  "analytics": {
-    "events": ["block_viewed", "block_interacted", "block_completed"]
-  },
-  "security": {
-    "sandbox": true,
-    "allowNetwork": false,
-    "allowClipboard": false,
-    "allowStorage": false
-  }
-}
-```
-
-Artifact rules:
-
-- `runtime` must be `html_sandbox`.
-- `entry` must point to an existing file in `files`.
-- `files` may include `/index.html`, `/styles.css`, `/script.js`, and other small text assets. Keep total inline file content under the app limit; use asset references for large media.
-- `renderTargets.playerMobile` is required. Use `mobileBehavior.mode: "full"` for responsive phone-ready artifacts, `viewer` for read/watch artifacts, `desktop_recommended` for awkward-but-usable experiences, and `desktop_required` only when phone completion is genuinely impossible.
-- Baseline analytics events are required: `block_viewed`, `block_interacted`, and `block_completed`.
-- Student answers, completion, resize, and analytics signals must go through `window.AlcherisArtifact` bridge methods. Do not write student work into the definition.
-- In guided flow, the artifact must call `window.AlcherisArtifact.submit(answer)` or `.complete({...})` at least once during a learner's interaction, otherwise the answer-gate never opens and the learner is trapped.
-- Security defaults are strict: sandbox on, storage off, network off, and clipboard off unless needed. In beta, `allowNetwork` stays `false`; networked artifacts require an explicit reviewed deployment setting.
-- Artifact library writes are teacher/admin-only. Students may run artifacts and submit through the bridge, but they must not author, mutate, or publish artifact definitions.
-- Prefer Alcheris-managed teacher assets for images/video/audio referenced inside an artifact (uploaded via `/teacher/assets` or the editor asset picker) - the artifact sandbox does not reach the open web.
-
-Artifact anti-patterns:
-
-- Do not include auth tokens, API keys, private URLs, teacher credentials, or hidden tracking code.
-- Do not use eval-style code or remote scripts to bypass review.
-- Do not reach into parent windows, cookies, local storage, or teacher storage directly.
-- Do not mark an artifact mobile-ready unless it actually works at phone width.
-- Do not build a full marketplace object inside one lesson block. For reuse now, save the block content to the teacher artifact library; community artifacts remain prebuilt/reviewed previews until publishing moderation exists.
+- **Whether to use one.** Use an `artifact` when the learner must see something transform or do something the native blocks cannot express: a simulation, a step-through transformation (table -> line graph), a drag/drop or build-it activity, a custom production desk. Prefer native blocks (quiz, cloze, sequence, `interaction` graph, `chart`, `illustration`, `branching_scenario`) when they fit; they are cheaper to build and maintain.
+- **Where it goes.** An exploratory artifact sits on the LEFT with the teaching, or as the single right-panel block in `artifact` mode with left-side guidance. A practice/production artifact goes on the RIGHT. In `artifact` mode the right panel holds exactly one artifact and the left panel holds purpose, instructions, success criteria, and any model/checklist.
+- **How it completes.** In guided flow it must call `window.AlcherisArtifact.submit(answer)` or `.complete({...})` during the learner's interaction, or the answer gate traps the learner. An artifact with `submission.enabled: true` and `completion.type: "on_submit"` is also required for lesson completion.
+- **Mobile.** Mark `mobileBehavior.mode: "full"` only if it really works at phone width; otherwise `viewer`, `desktop_recommended`, or (rarely) `desktop_required`.
+- **Theme.** Prefer `appearance: {mode: "inherit", tokenVersion: "1"}` so the artifact follows the learner's light, dark, or custom palette through Alcheris CSS tokens; use `fixed` only when the artifact's own visual system is part of the content.
+- **Import and reuse.** Artifact packages (`.alcheris-artifact.json`, raw definition or a `format: "alcheris_artifact"` envelope) are imported into the Artifact Library or an editable artifact workspace and validated by the same server contract. Artifact JSON belongs in the Artifact Library, not Teacher Assets; Teacher Assets hold the images/video/audio/documents an artifact references.
+- **Safety.** Sandbox on, network/storage/clipboard off, no credentials or hidden tracking, media from Alcheris-managed teacher assets only. Students run artifacts but never edit their source. Save reusable artifacts to the library (`save_artifact`) and insert them with `add_artifact_block`.
 
 ## Lesson Design Patterns
 
@@ -457,7 +432,7 @@ Page 3: Explain or model
 Page 4: Apply
 
 - Left: checklist, criteria, source material, hints, or reference table.
-- Right: essay, coding, data-lab, canvas, illustration, quiz set, or other production block.
+- Right: essay, coding, data-lab, canvas, illustration, branching_scenario, quiz set, or other production block.
 
 Page 5: Check and reflect
 
@@ -590,7 +565,7 @@ For trend-graph lessons:
 
 After writes:
 
-1. Fetch `/api/lessons/{lesson_id}/`.
+1. Fetch `/api/lessons/{lesson_id}/` (or `get_lesson`). If you revised a copy, confirm you are reading the copy's id, not the original's.
 2. Confirm page count and titles.
 3. Split blocks by `panel`.
 4. Validate block contracts.
@@ -602,7 +577,8 @@ After writes:
    - `No content added yet.`
 8. Confirm images render, not only the image block payload.
 9. Confirm full-panel pages show the intended workspace.
-10. Check the mobile path: mentally run beat generation (see `references/alcheris-learning-beats.md`). Each right-panel activity should pair with the explanation it practices; split pages should have roughly one left heading section per right activity; `viewer`/`desktop_recommended` blocks should be acceptable on a phone or replaced with a mobile-native alternative. Set `mobileBeatsOverride` only if clean auto-grouping is not achievable.
+10. Search learner-facing text for author notes, TODOs, placeholders, or questions to the teacher, and remove them.
+11. Check the mobile path: mentally run beat generation (see `references/alcheris-learning-beats.md`). Each right-panel activity should pair with the explanation it practices; split pages should have roughly one left heading section per right activity; `viewer`/`desktop_recommended` blocks should be acceptable on a phone or replaced with a mobile-native alternative. Set `mobileBeatsOverride` only if clean auto-grouping is not achievable.
 
 ## Builder Self-Audit
 

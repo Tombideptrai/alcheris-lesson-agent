@@ -20,7 +20,14 @@ The skill helps an AI agent turn source material into an Alcheris lesson that is
   illustrations, before/after sliders) instead of static text and images when the
   content has movement, parameters, or a process,
 - **designed for the mobile path** - lessons collapse cleanly into mobile learning beats,
-- checked for empty or weak blocks, and verified through the student/player route.
+- checked for empty or weak blocks, and verified through the student/player route,
+- **safe to revise** - edits to a teacher's lesson go into a copy, and restructures use the
+  connector's `move_block`, `reorder_blocks`, and `save_lesson_structure` tools instead of
+  delete-and-re-add, so formatting and block ids survive.
+
+Artifact blocks (sandboxed HTML/CSS/JS learning objects) are built with the sibling skill
+`skills/alcheris-artifact-builder`. The lesson-agent skill decides whether a lesson needs
+one; the artifact builder covers sizing, phones, validation, and upload.
 
 The core learning spine is:
 
@@ -59,16 +66,22 @@ skill and the app never drift.
 |   |-- prompts.md
 |   `-- trend-graph-lesson-done-right.md
 `-- skills/
-    `-- alcheris-lesson-agent/
+    |-- alcheris-lesson-agent/
+    |   |-- SKILL.md
+    |   |-- agents/openai.yaml
+    |   |-- data/block-contracts.json
+    |   |-- references/
+    |   |   |-- alcheris-block-inventory.md
+    |   |   |-- alcheris-interactive-blocks.md
+    |   |   |-- alcheris-learning-beats.md
+    |   |   |-- alcheris-lesson-contracts.md
+    |   |   `-- alcheris-teacher-personas.md
+    |   `-- scripts/validate_alcheris_lesson.py
+    `-- alcheris-artifact-builder/
         |-- SKILL.md
-        |-- agents/openai.yaml
-        |-- data/block-contracts.json
-        |-- references/
-        |   |-- alcheris-block-inventory.md
-        |   |-- alcheris-interactive-blocks.md
-        |   |-- alcheris-learning-beats.md
-        |   `-- alcheris-lesson-contracts.md
-        `-- scripts/validate_alcheris_lesson.py
+        |-- assets/ (starter template, graph-skins example)
+        |-- references/ (contract, frame-and-sizing, upload-and-verify)
+        `-- scripts/ (validate_artifact.py, frame_check.html)
 ```
 
 ## Quick Start

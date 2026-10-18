@@ -1,6 +1,6 @@
 ---
 name: alcheris-lesson-agent
-description: Build, edit, audit, and repair interactive self-study lessons in Alcheris through the Alcheris MCP or backend API for any subject area. Use when Codex is asked to create or improve Alcheris lessons, use the lesson-maker app, work with the alcheris-mcp server, convert source material into learner-facing Alcheris pages/blocks, choose block/layout/full-panel modes, add media/practice/workspaces/custom_activity/artifact blocks, add interactive/animated blocks (interaction graph/distribution/equation widgets, artifact HTML/CSS/JS sandboxes, illustration, comparison, canvas, mindmap) instead of static equivalents, design lessons for the guided-flow (mobile + desktop) path, verify lesson quality, fix empty or weak blocks, generate safe custom activity or artifact definitions, reuse teacher assets, respect sequential-order courses, or prepare an installable workflow for Alcheris lesson generation.
+description: Build, edit, audit, and repair interactive self-study lessons in Alcheris through the Alcheris MCP or backend API for any subject area. Use when Codex is asked to create or improve Alcheris lessons, use the lesson-maker app, work with the alcheris-mcp server, convert source material into learner-facing Alcheris pages/blocks, choose block/layout/full-panel modes, revise or restructure an existing lesson (move, reorder, re-layout blocks without losing formatting), add media/practice/workspaces/custom_activity/artifact/branching_scenario blocks, add interactive/animated blocks (interaction graph/distribution/equation widgets, artifact HTML/CSS/JS sandboxes, illustration, comparison, canvas, mindmap) instead of static equivalents, design lessons for the guided-flow (mobile + desktop) path, verify lesson quality, fix empty or weak blocks, generate safe custom activity or artifact definitions, reuse teacher assets, respect sequential-order courses, or prepare an installable workflow for Alcheris lesson generation.
 ---
 
 # Alcheris Lesson Agent
@@ -45,6 +45,36 @@ Never use placeholder content to satisfy requested volume. Forbidden patterns in
 
 If the requested scope exceeds what can be produced to the stated quality in the current turn, deliver the approved first stage rather than lowering quality. Say what stage was completed and what remains; do not pretend a skeleton is a finished course.
 
+## Safe Revision Gate
+
+When the user asks you to revise, refine, restructure, or fix an existing teacher lesson:
+
+- **Write to a copy unless the user explicitly says to edit the original.** Duplicate the lesson (Course Manager > lesson menu > "Duplicate lesson", which calls `POST /api/lessons/{id}/duplicate/`; the connector has no duplicate tool, so ask the user to do it or to share the copy's id), keep it private and unpublished, and tell the user both lesson ids. The original is replaced only after the user approves the copy.
+- **Block and page ids change in a copy.** A revision plan written against the original's ids does not apply to the duplicate. Re-read the copy with `get_lesson` and map each block by page, panel, and position (and by content, e.g. quiz question text or image) before writing. The same goes for ids inside block content such as quiz question ids.
+- **Re-read the original before promoting the copy.** The teacher may have edited it in the editor after you duplicated it. Report any drift instead of overwriting it.
+- **Never leave author notes in learner-facing text.** Remarks meant for the teacher or for yourself, such as "(can you record a video here?)", "TODO", "[insert chart]", "note: check this", or questions to the user, must not be saved inside text, callout, quiz, or any other block a student sees. Ask the user in chat instead, or keep the note out of the lesson.
+- **Restructure with the restructure tools, not delete-and-re-add.** Deleting a block and adding it again rebuilds rich text from plain text, so bold, lists, callout formatting, and Lexical JSON are lost, the block gets a new id, and learner answers and analytics detach. Use `move_block`, `reorder_blocks`, `update_page`, and `save_lesson_structure` (see "Connector Tools" below).
+
+## Connector Tools (Alcheris MCP)
+
+The Alcheris MCP server (`alcheris-mcp`, also exposed as the claude.ai Alcheris connector) writes to the real app. Exact signatures and error shapes are in `references/alcheris-lesson-contracts.md`. Choose tools by job:
+
+- **Read first:** `whoami` (which account/server you act as), `list_lessons`, `get_lesson`, `get_block_content`, `get_lesson_quality`, `get_lesson_analytics`.
+- **Create:** `create_lesson`, `add_page`, `add_block`, `add_artifact_block` (from the artifact library).
+- **Edit in place:** `update_lesson` (title, description, publish), `update_page` (title, `layout`, `right_panel_mode`), `update_block` (merges content; `raw: true` replaces it exactly).
+- **Restructure without losing content:** `move_block` (within a page, across panels, or to another page; the block keeps its id and content), `reorder_blocks` (the full order of one page's panels), and `save_lesson_structure` (one atomic write of every page and block: places existing blocks by id, adds new ones, deletes the ones you list).
+- **Delete:** `delete_block`, `delete_page`, `delete_lesson`. Only with clear user intent.
+- **Media and artifacts:** `image_search`, `video_search`, `youtube_search`; `list_artifacts`, `save_artifact`, `duplicate_artifact`.
+
+Rules:
+
+- Prefer `save_lesson_structure` for any change touching several pages or blocks. It either saves everything or nothing.
+- Send `raw: true` whenever the content is already built, such as content copied from `get_block_content` or another lesson. Without it, the tool rebuilds the content (plain text becomes rich text, quiz questions are normalized), which can strip formatting.
+- An `edit_conflict` error means the lesson changed after you read it. Re-read with `get_lesson`, re-apply your change, and save again. Never retry blindly.
+- A `block_contract_invalid` error lists `block_contract_errors` with the page, panel, and block index. Fix that block; nothing was saved.
+- Right-panel blocks only show on `split` pages. When moving practice to the right, also set the page to `split` (and the right-panel mode if needed).
+- claude.ai caches a connector's tool list. If a tool named here is missing, ask the user to disconnect and reconnect the Alcheris connector rather than falling back to delete-and-re-add.
+
 ## Language-Learning Content Quality Gate
 
 For grammar, vocabulary, speaking, writing, IELTS/Cambridge/VSTEP, ESL/EFL, or CEFR lessons, content quality is part of the contract, not an optional polish pass.
@@ -82,7 +112,7 @@ Choose the layout from the learner action on that page.
 Do not treat every interactive object as practice. Alcheris has two broad interaction categories:
 
 - **Exploratory interaction**: the learner explores an idea before or during explanation, such as an `interaction` graph/distribution/equation, a hotspot image, a staged illustration, a comparison, or a canvas replay. This belongs with teaching, usually on the LEFT.
-- **Practice interaction**: the learner answers, arranges, writes, codes, submits, or checks understanding, such as quiz, cloze, sequence, flashcard, essay, coding, data-lab, custom_activity, artifact, or checkpoint. This belongs on the RIGHT/floating panel.
+- **Practice interaction**: the learner answers, arranges, writes, codes, chooses a path, submits, or checks understanding, such as quiz, cloze, sequence, flashcard, essay, branching_scenario, coding, data-lab, custom_activity, artifact, or checkpoint. This belongs on the RIGHT/floating panel.
 
 Never put an exploratory interaction above the right-panel practice as the main stimulus. The point of the two-panel layout is that students can look up the source, guidance, model criteria, and explanatory visuals on the left while practising on the right. If a right-panel quiz/flashcard question needs a visual, add the image inside that question/card too, but keep the main source/exploration on the left.
 
@@ -118,6 +148,7 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
 
 1. Ground the target.
    - If editing, read the existing lesson first with `get_lesson` or `/api/lessons/{id}/`.
+   - If revising a teacher's lesson, pass the Safe Revision Gate: write to a copy unless told otherwise, and remap block ids in the copy.
    - Preserve existing content unless the user asks to replace it.
    - Never publish, delete, or overwrite a full lesson without explicit user intent.
    - For new course creation, pass the Permission And Scope Gate before writing anything to Alcheris.
@@ -139,7 +170,7 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
 
 3. Use panels deliberately (teaching/exploration LEFT, practice RIGHT).
    - Left panel = encounter + explore + understand: the hook, source material, exploratory interaction, explanation, models, worked examples, visuals/charts, language bank, hints, and self-check notes. An `interaction` graph/distribution/equation is almost always exploratory explanation, not an exercise, so put it on the left unless the user explicitly asks otherwise.
-   - Right (floating) panel = practice + application + production: quiz, cloze, sequence, flashcards, essay, coding, data-lab, checkpoint, artifact, custom_activity, or another block where the learner must answer, arrange, write, code, submit, or produce. The floating panel is for doing, not for extra exposition.
+   - Right (floating) panel = practice + application + production: quiz, cloze, sequence, flashcards, essay, branching_scenario, coding, data-lab, checkpoint, artifact, custom_activity, or another block where the learner must answer, arrange, choose, write, code, submit, or produce. The floating panel is for doing, not for extra exposition.
    - Artifact placement follows purpose: exploratory artifact with teaching/source support may belong on the left or in full-panel artifact mode with left guidance; practice/production artifact belongs on the right/floating panel.
    - Exception: `illustration` always goes in the RIGHT panel using `illustration` mode - it needs the space (see step 4), even though it is explanatory.
    - If right-panel practice depends on a chart/image/source, the relevant source must be visible on the page while the learner practises. Put the main source on the left; additionally add per-question/card images when the practice item itself refers to that visual.
@@ -157,12 +188,13 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
    - `data-lab`: notebook-style data exploration.
    - `illustration`: animated or visual presentation workspace. Prioritize placing illustration in the RIGHT panel using `illustration` mode as the single right-panel block - it demands space and is designed to shine there. A normal inline illustration block is acceptable only when it is small/simple and there is a clear reason. The left panel then holds the purpose, observation prompt, and follow-up.
    - `artifact`: one sandboxed HTML/CSS/JS learning object, like a Notion-style artifact block, with Alcheris-managed analytics/submission/completion events.
+   - Set the mode with `update_page(right_panel_mode=...)` or the page's `rightPanelMode` in `save_lesson_structure`, and set `layout: "split"` at the same time.
    - Avoid putting many ordinary blocks into a non-standard workspace mode.
    - For each non-standard mode, the left panel must support the workspace with source material, instructions, criteria, model, checklist, or hints. The right panel should usually contain one main workspace block.
 
 5. Build with the right blocks.
    - Read `references/alcheris-block-inventory.md` before selecting blocks for a new lesson or major revision.
-   - Every lesson needs at least one active learning block: quiz, cloze, sequence, flashcard, essay, custom_activity, artifact, coding, data-lab, interaction, checkpoint, etc.
+   - Every lesson needs at least one active learning block: quiz, cloze, sequence, flashcard, essay, branching_scenario, custom_activity, artifact, coding, data-lab, interaction, checkpoint, etc.
    - Interactive-first is mandatory when it fits: when the source has movement, parameters, a before/after state, hotspots/parts to inspect, or a process, reach for an exploratory interactive block instead of a static equivalent. Read `references/alcheris-interactive-blocks.md`. In particular: data over time -> `interaction` mode `graph` (slider reveal), not a static chart image; spread/parameter concept -> `interaction` mode `distribution` or `equation`; a process/transformation -> `illustration` staged scenes, not a bullet list; a before/after change -> `comparison`, not two stacked blocks; a step-by-step diagram -> `canvas` replay; hotspots/parts in an image -> image hotspots when available. Apply reveal-before-explain and manipulate-before-tell. Use one interactive block per teaching point; do not decorate.
    - Data or chart lessons need an image/chart/table stimulus, not only text. A live `interaction` graph counts as the stimulus and is preferred over a static image when the data moves over time.
    - Domain-specific source stages must be preserved. Do not skip recognition, transformation, worked analysis, setup vocabulary, rules, safety notes, or examples when the source material teaches them.
@@ -183,14 +215,16 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
    - If the source teaches how to write or build a component, include the component's purpose, ingredients, allowed content, forbidden content, model, non-example or distractor, guided practice, and independent production task.
    - When stating a rule, explain why the rule exists and give at least one concrete example. For decision rules, also include a non-example or contrast case when it helps prevent random or shallow application.
    - Use `custom_activity` only for safe JSON-compatible teacher-created activity definitions interpreted by Alcheris renderers. Do not put JavaScript functions, imports, arbitrary code, binary files, or oversized media into `content`; use file references/metadata for uploads.
-   - Use `artifact` when the native block inventory is not enough for the intended learning experience. Artifacts may be exploratory, practice, or production, but must be sandboxed HTML/CSS/JS learning objects with the Alcheris artifact contract: `runtime: "html_sandbox"`, `files`, `entry`, render targets, mobile behavior, completion, submission, analytics, and security flags. `allowNetwork` is off by default; artifacts reach Alcheris-managed asset URLs only. Do not use artifacts for auth, teacher credentials, arbitrary storage access, eval-style code, or hidden data exfiltration. Student communication must go through the Alcheris artifact bridge, and students never edit artifact source (teacher/admin authoring only).
+   - Use `artifact` when the native block inventory is not enough for the intended learning experience: the learner has to *see something transform* (a table becoming a line graph) or *do something* native blocks cannot express. Artifacts may be exploratory, practice, or production. This skill decides *whether* and *where* an artifact belongs. For *how* to build, size, fit phones, theme, validate, and upload one, use the sibling skill `skills/alcheris-artifact-builder` (its starter template, `validate_artifact.py`, and `frame_check.html`). Do not hand-write artifact code from this skill's references alone; host sizing rules (fixed `viewport` presets, no internal scrolling) reject or break naive code.
+   - Use `branching_scenario` for decision practice: the learner picks a choice, sees feedback, and the scene branches until it reaches an ending. Good for professional judgement, classroom/customer/patient situations, and "what would you do?" cases. It is answer-gated, so every path must reach an ending (a node with no choices, or a choice with a blank `nextNodeId`).
+   - Use `gallery` with `layout: "threads"` when learners should compare 3+ charts, examples, or variants side by side: a sideways-swipeable row of rounded cards at natural aspect ratio, tap to open full size. Keep the default `carousel` for a step-through of one big image at a time.
 
 6. Design for guided flow (mobile always, desktop opt-in).
    - Alcheris is self-study; many learners are on phones AND desktop learners can toggle a **guided flow** that reveals blocks one at a time. Both paths use the same learning-beats engine, so beat quality drives both experiences. Read `references/alcheris-learning-beats.md`.
    - Signpost with one heading per teaching point; keep each right-panel activity next to the explanation it practices; for a split page with N activities provide about N left heading sections (rough 1:1).
    - Be mobile-behavior aware: `interaction` widgets are mobile-native (`full`); `canvas`, `mindmap`, `comparison`, and `illustration` become viewers on phones. For interactivity that must work on mobile, prefer `interaction`. Mark a genuinely desktop-only block `desktop_required` on purpose rather than shipping a cramped version.
    - Only set `mobileBeatsOverride` when clean auto-grouping is not achievable; prefer fixing block order and headings first.
-   - **Answer-gate contract.** In guided flow, `quiz`, `cloze`, `sequence`, `essay`, `custom_activity`, `artifact`, and `interaction` blocks HARD-BLOCK progression until the learner completes them (the block dispatches an "answered" event). Every gated block MUST be completable end-to-end: a quiz needs at least one question with a valid answer; a cloze needs bracketed answers and a `wordBank`; a sequence needs >=2 real items; an essay needs a prompt (learners submit their draft); a `custom_activity` must include a working submit step; an `artifact` must call `window.AlcherisArtifact.submit` (or `.complete`) somewhere in its code; an `interaction` must be resolvable (e.g. the graph slider can reach the end, the equation puzzle has a valid target). A gated block that cannot be completed silently traps the learner mid-lesson. Prefer non-gated equivalents (`text`, `callout`, `image`, `illustration`, `chart`) if a block is decorative and not meant to be completed.
+   - **Answer-gate contract.** In guided flow, `quiz`, `cloze`, `sequence`, `essay`, `custom_activity`, `artifact`, `interaction`, and `branching_scenario` blocks HARD-BLOCK progression until the learner completes them (the block dispatches an "answered" event). Every gated block MUST be completable end-to-end: a quiz needs at least one question with a valid answer; a cloze needs bracketed answers and a `wordBank`; a sequence needs >=2 real items; an essay needs a prompt (learners submit their draft); a `custom_activity` must include a working submit step; an `artifact` must call `window.AlcherisArtifact.submit` (or `.complete`) somewhere in its code; an `interaction` must be resolvable (e.g. the graph slider can reach the end, the equation puzzle has a valid target); a `branching_scenario` needs a valid `startNodeId`, every non-blank `nextNodeId` must name a node, and every path must reach an ending (a node with no choices, or a choice whose `nextNodeId` is blank). Blocks marked `desktop_required` are not gated. A gated block that cannot be completed silently traps the learner mid-lesson. Prefer non-gated equivalents (`text`, `callout`, `image`, `illustration`, `chart`) if a block is decorative and not meant to be completed.
    - **Empty text blocks are silently filtered out of the player** (`text | paragraph | h1-h6 | quote | code` with no content). An empty block leaves no visible hole to catch during editor preview, so do not ship placeholder-only text/heading blocks and assume they will be visible - they will not.
    - **Fork-friendly authoring.** Students can save any block into their personal notebook - the notebook stores a frozen snapshot of the block at fork time (source_snapshot), so a student's saved copy stays valid even after the teacher edits the lesson. Author every block to be MEANINGFUL WHEN DETACHED from the surrounding page: a callout should carry its own rule, a worked example should include the problem AND the solution, a flashcard should teach without needing the lesson context, an interaction should have a title and observation prompt inside the widget. Blocks that only make sense next to their neighbours become unusable notebook items.
    - **Checkpoint block is the designed gate.** Beyond the answer-gated types above, use `checkpoint` explicitly when you want a page to stop and force the learner to reveal/confirm before continuing (staged answer reveal, sync/compare, recovery point). The player's future guided-flow spec extends per-block trigger rules to checkpoint and desktop-heavy blocks (code/data-lab/artifact) with teacher-configurable pass-check/manual-continue/desktop-required notices - author for that intent even where it isn't fully wired yet.
@@ -206,7 +240,7 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
    - Visual/player audit: inspect the student/player route when available, including empty panels, cramped full-panel workspaces, visible images/media, interaction rendering, guided-flow/mobile ordering, and answer gates.
 
 8. Verify through readback and the browser.
-   - Read the saved lesson after writes.
+   - Read the saved lesson after writes. After a restructure, confirm every moved block kept its id and content, and that each page's layout and `rightPanelMode` match the plan.
    - Treat API `pages[].blocks` as canonical on readback; split into panels by `block.panel`.
    - Check that each block has non-empty renderer-required content.
    - Open `/learn/{lesson_id}` or editor preview and verify visible content, media, and no empty-panel messages.
@@ -230,7 +264,7 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
 - Interactive blocks are authored with valid `content` per `references/alcheris-interactive-blocks.md`: `interaction` has a valid `mode` and its mode data; `illustration` has scenes with layers and keyframes; `comparison` has a `compareType` and its before/after pair; `canvas`/`mindmap` have their required arrays.
 - Source material with movement, parameters, before/after, or a process was not flattened into static text/image when an interactive block fits.
 - The guided-flow path is sound (mobile always, desktop opt-in): each right-panel practice activity pairs with its left-panel explanation, headings roughly match activity count on split pages, and `viewer`/`desktop_recommended` blocks are acceptable on a phone or replaced with a mobile-native alternative.
-- Every answer-gated block (`quiz`, `cloze`, `sequence`, `essay`, `custom_activity`, `artifact`, `interaction`) is completable: no empty quizzes, no cloze without bracketed answers + `wordBank`, no single-item sequence, no essay without a prompt, no `custom_activity` without a submit step, no `artifact` that never calls `AlcherisArtifact.submit`/`complete`, no `interaction` in an unresolvable state. A gated block that cannot be completed traps the learner in guided flow.
+- Every answer-gated block (`quiz`, `cloze`, `sequence`, `essay`, `custom_activity`, `artifact`, `interaction`, `branching_scenario`) is completable: no empty quizzes, no cloze without bracketed answers + `wordBank`, no single-item sequence, no essay without a prompt, no `custom_activity` without a submit step, no `artifact` that never calls `AlcherisArtifact.submit`/`complete`, no `interaction` in an unresolvable state, no `branching_scenario` with a dangling `nextNodeId` or no reachable ending. A gated block that cannot be completed traps the learner in guided flow.
 - No text/heading/quote/code block is empty. The player filters empties silently, so they will not show up as visible gaps during preview.
 - If the target course has Sequential Order on (`linear_progression`) or the lesson has `unlock_requirements`, the whole lesson is verified completable end-to-end - no dead-end block leaves a student unable to unlock the next lesson.
 - Media that recurs across the course reuses teacher-asset library URLs (from `/api/assets/`) rather than one-off external URLs, and any `artifact` that needs media references Alcheris-managed asset URLs (its sandbox has `allowNetwork` off by default).
@@ -256,6 +290,10 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
 - Any practice that depends on an image/chart/source keeps that source visible on the page while students practise, with per-question/card images added when useful.
 - Every cloze includes a `wordBank` of draggable words (with a few distractors); no fill-the-gap ships with blanks and no word list. Sequence items are the real sentences/steps to reorder, not abstract labels.
 - Vocabulary and long reference lists are presented as flashcards, grouped accordions, or compact grouped lists (not one long flat table) and paired with at least one usage exercise.
+- No learner-facing text contains author notes, TODOs, placeholders, or questions meant for the teacher (e.g. "(can you record…)", "[insert image]").
+- Revisions of a teacher's lesson went into a copy unless the user said otherwise, and the user has both lesson ids.
+- Restructures used `move_block` / `reorder_blocks` / `save_lesson_structure` (with `raw: true` for copied content), not delete-and-re-add, so formatting and block ids survived.
+- Any `artifact` was built and checked with the `alcheris-artifact-builder` skill (fits desktop, editor, and phone frames; validator passes).
 - The student/player route has been checked or the inability to check is reported.
 
 ## References
@@ -267,3 +305,4 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
 - Read `references/alcheris-teacher-personas.md` before writing any learner-facing text; write the whole lesson in the declared persona.
 - `data/block-contracts.json` is the machine-readable source of truth for interactive-block schemas, mobile behavior, and beats. The human references above and the native in-app agent prompt both derive from it; keep them in sync with it.
 - Use `scripts/validate_alcheris_lesson.py` to audit a saved lesson from the backend.
+- Use the sibling skill `skills/alcheris-artifact-builder` to build, size, validate, and upload any `artifact` block.

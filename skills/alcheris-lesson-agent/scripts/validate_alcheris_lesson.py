@@ -54,11 +54,12 @@ CUSTOM_OPTIONAL_EVENTS = {
 HEADING_TYPES = {"h1", "h2", "h3", "h4", "h5", "h6"}
 BEAT_ACTIVITY_TYPES = {
     "quiz", "cloze", "sequence", "flashcard", "snippet", "coding", "data-lab",
-    "interaction", "canvas", "mindmap", "comparison", "essay", "custom_activity", "artifact", "checkpoint",
+    "interaction", "canvas", "mindmap", "comparison", "essay", "branching_scenario",
+    "custom_activity", "artifact", "checkpoint",
 }
 PRACTICE_BLOCK_TYPES = {
     "quiz", "cloze", "sequence", "flashcard", "essay", "coding", "data-lab",
-    "custom_activity", "artifact", "checkpoint",
+    "branching_scenario", "custom_activity", "artifact", "checkpoint",
 }
 PRODUCTION_BLOCK_TYPES = {"essay", "coding", "data-lab", "custom_activity", "artifact"}
 EXPLORATORY_BLOCK_TYPES = {"interaction", "illustration", "comparison", "canvas", "mindmap"}
@@ -68,6 +69,16 @@ CUSTOM_EMITS = {"submitted", "completed", "score_changed"}
 CUSTOM_SIGNALS = {"submission_status", "score", "completion_status"}
 ARTIFACT_MOBILE_MODES = {"full", "viewer", "simplified", "desktop_recommended", "desktop_required"}
 ARTIFACT_COMPLETION_TYPES = {"none", "manual", "on_interaction", "on_submit"}
+ARTIFACT_VIEWPORT_PRESETS = {"square", "portrait"}
+GALLERY_LAYOUTS = {"carousel", "threads"}
+# Remarks meant for the teacher or the agent that must never reach learners.
+AUTHOR_NOTE_PATTERNS = [
+    re.compile(r"\((?:can|could|would|should) (?:you|we)\b[^)]*\)", re.IGNORECASE),
+    re.compile(r"\b(?:TODO|TBD|FIXME)\b"),
+    re.compile(r"\[(?:insert|add|todo|placeholder)\s[^\]]*\]", re.IGNORECASE),
+    re.compile(r"\b(?:note to (?:self|teacher)|author'?s note|teacher note)\b", re.IGNORECASE),
+]
+AUTHOR_NOTE_SKIP_KEYS = {"files", "code", "source", "url", "image", "src", "embedUrl", "id"}
 ARTIFACT_RUNTIME = "html_sandbox"
 ARTIFACT_MAX_INLINE_BYTES = 200 * 1024
 
@@ -340,6 +351,19 @@ def validate_artifact(content: dict, label: str, warnings: list[str], errors: li
     if mobile.get("mode") == "full" and mobile.get("layout") == "fixed":
         warnings.append(f"{label}: artifact is marked mobile full but layout is fixed")
 
+    viewport = content.get("viewport")
+    if viewport is None:
+        warnings.append(f"{label}: artifact has no viewport; set viewport.preset square or portrait (see the alcheris-artifact-builder skill)")
+    elif not isinstance(viewport, dict):
+        errors.append(f"{label}: artifact viewport must be an object")
+    else:
+        if viewport.get("preset") not in ARTIFACT_VIEWPORT_PRESETS:
+            errors.append(f"{label}: artifact viewport.preset must be square or portrait")
+        if viewport.get("scrolling") != "none":
+            errors.append(f"{label}: artifact viewport.scrolling must be none; split long content into steps")
+        if content.get("embedHeight") is not None:
+            errors.append(f"{label}: artifact uses embedHeight; use viewport.preset instead")
+
     submission = content.get("submission") or {}
     enabled = submission.get("enabled")
     mode = submission.get("mode")
@@ -377,10 +401,139 @@ def validate_artifact(content: dict, label: str, warnings: list[str], errors: li
             errors.append(f"{label}: security.{flag} must be true or false")
 
 
+def validate_branching_scenario(content: dict, label: str, warnings: list[str], errors: list[str]) -> None:
+    if not isinstance(content, dict):
+        errors.append(f"{label}: branching_scenario content must be an object")
+        return
+    if not has_text(content.get("title")):
+        warnings.append(f"{label}: branching_scenario should include a title")
+    if not has_text(content.get("prompt")):
+        warnings.append(f"{label}: branching_scenario should include a learner-facing prompt")
+
+    nodes = content.get("nodes") or []
+    if not isinstance(nodes, list) or not nodes:
+        errors.append(f"{label}: branching_scenario needs at least one node")
+        return
+
+    node_ids: set[str] = set()
+    choice_count = 0
+    for ni, node in enumerate(nodes):
+        if not isinstance(node, dict):
+            errors.append(f"{label}, node {ni + 1}: node must be an object")
+            continue
+        node_id = node.get("id")
+        if not has_text(node_id):
+            errors.append(f"{label}, node {ni + 1}: node id is required")
+        elif str(node_id) in node_ids:
+            errors.append(f"{label}, node {ni + 1}: duplicate node id {node_id}")
+        else:
+            node_ids.add(str(node_id))
+        if not has_text(node.get("title")):
+            warnings.append(f"{label}, node {ni + 1}: node should include a title")
+        if not has_text(node.get("body")):
+            errors.append(f"{label}, node {ni + 1}: node body is required")
+
+        choices = node.get("choices") or []
+        if not isinstance(choices, list):
+            errors.append(f"{label}, node {ni + 1}: choices must be a list")
+            continue
+        choice_count += len(choices)
+        seen_choices: set[str] = set()
+        for ci, choice in enumerate(choices):
+            if not isinstance(choice, dict):
+                errors.append(f"{label}, node {ni + 1}, choice {ci + 1}: choice must be an object")
+                continue
+            choice_id = choice.get("id")
+            if not has_text(choice_id):
+                errors.append(f"{label}, node {ni + 1}, choice {ci + 1}: choice id is required")
+            elif str(choice_id) in seen_choices:
+                errors.append(f"{label}, node {ni + 1}, choice {ci + 1}: duplicate choice id {choice_id}")
+            else:
+                seen_choices.add(str(choice_id))
+            if not has_text(choice.get("label")):
+                errors.append(f"{label}, node {ni + 1}, choice {ci + 1}: choice label is required")
+            if not has_text(choice.get("feedback")):
+                warnings.append(f"{label}, node {ni + 1}, choice {ci + 1}: add feedback so the choice teaches")
+
+    start_id = content.get("startNodeId") or nodes[0].get("id")
+    if not has_text(start_id) or str(start_id) not in node_ids:
+        errors.append(f"{label}: startNodeId must point to an existing node")
+    if choice_count == 0:
+        errors.append(f"{label}: branching_scenario needs at least one choice")
+
+    for ni, node in enumerate(nodes):
+        if not isinstance(node, dict):
+            continue
+        for ci, choice in enumerate(node.get("choices") or []):
+            if not isinstance(choice, dict):
+                continue
+            next_node_id = choice.get("nextNodeId")
+            if has_text(next_node_id) and str(next_node_id) not in node_ids:
+                errors.append(f"{label}, node {ni + 1}, choice {ci + 1}: nextNodeId {next_node_id} does not match any node")
+
+    # Every node reachable from the start must be able to reach an ending, or guided flow traps the learner.
+    # A node with no choices is an ending; a choice with a blank nextNodeId also ends the scenario.
+    by_id = {str(n.get("id")): n for n in nodes if isinstance(n, dict) and has_text(n.get("id"))}
+    if has_text(start_id) and str(start_id) in by_id:
+        def targets(node_id):
+            return [str((c or {}).get("nextNodeId")) for c in by_id[node_id].get("choices") or []
+                    if isinstance(c, dict) and has_text(c.get("nextNodeId")) and str(c.get("nextNodeId")) in by_id]
+
+        def ends_here(node_id):
+            choices = by_id[node_id].get("choices") or []
+            return not choices or any(isinstance(c, dict) and not has_text(c.get("nextNodeId")) for c in choices)
+
+        reachable, stack = set(), [str(start_id)]
+        while stack:
+            node_id = stack.pop()
+            if node_id not in reachable:
+                reachable.add(node_id)
+                stack.extend(targets(node_id))
+        can_end = {n for n in reachable if ends_here(n)}
+        changed = True
+        while changed:
+            changed = False
+            for node_id in reachable - can_end:
+                if any(t in can_end for t in targets(node_id)):
+                    can_end.add(node_id)
+                    changed = True
+        if not can_end:
+            errors.append(f"{label}: branching_scenario has no reachable ending (a node with no choices, or a choice with blank nextNodeId)")
+        else:
+            stuck = sorted(reachable - can_end)
+            if stuck:
+                errors.append(f"{label}: branching_scenario nodes {stuck} loop forever and never reach an ending")
+
+
+def learner_strings(value, key: str | None = None):
+    if key in AUTHOR_NOTE_SKIP_KEYS:
+        return
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for k, v in value.items():
+            yield from learner_strings(v, k)
+    elif isinstance(value, list):
+        for item in value:
+            yield from learner_strings(item, key)
+
+
+def check_author_notes(block: dict, label: str, warnings: list[str]) -> None:
+    if block.get("type") in {"artifact", "coding", "snippet", "code", "data-lab"}:
+        return
+    for text in learner_strings(block.get("content") or {}):
+        for pattern in AUTHOR_NOTE_PATTERNS:
+            match = pattern.search(text)
+            if match:
+                warnings.append(f"{label}: possible author note in learner-facing text: {match.group(0)[:80]!r}")
+                return
+
+
 def validate_block(block: dict, page_index: int, block_index: int, warnings: list[str], errors: list[str]) -> None:
     btype = block.get("type")
     content = block.get("content") or {}
     label = block_label(page_index, block_index, block)
+    check_author_notes(block, label, warnings)
 
     if btype in {"text", "paragraph", "h1", "h2", "h3", "h4", "h5", "h6", "quote"}:
         if not rich_text_has_visible_content(content):
@@ -409,6 +562,9 @@ def validate_block(block: dict, page_index: int, block_index: int, warnings: lis
     elif btype == "gallery":
         if not content.get("slides"):
             warnings.append(f"{label}: gallery has no slides")
+        layout = content.get("layout")
+        if layout is not None and layout not in GALLERY_LAYOUTS:
+            warnings.append(f"{label}: gallery layout {layout!r} is not supported; use carousel or threads")
     elif btype == "embed":
         if not has_text(content.get("embedUrl")):
             errors.append(f"{label}: embed needs embedUrl")
@@ -488,6 +644,8 @@ def validate_block(block: dict, page_index: int, block_index: int, warnings: lis
             errors.append(f"{label}: essay needs a prompt")
         if not isinstance(content.get("minWords"), int) or content.get("minWords", 0) <= 0:
             warnings.append(f"{label}: essay should include positive minWords")
+    elif btype == "branching_scenario":
+        validate_branching_scenario(content, label, warnings, errors)
     elif btype == "custom_activity":
         validate_custom_activity(content, label, warnings, errors)
     elif btype == "artifact":
@@ -578,6 +736,7 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
         "sequence",
         "flashcard",
         "essay",
+        "branching_scenario",
         "custom_activity",
         "artifact",
         "coding",
@@ -749,7 +908,7 @@ def validate_lesson(lesson: dict) -> tuple[list[str], list[str], dict]:
 
     if active_count and practice_count == 0:
         warnings.append(
-            "lesson has active/exploratory blocks but no practice blocks; add quiz, cloze, sequence, flashcard, essay, coding, data-lab, custom_activity, artifact, or checkpoint practice"
+            "lesson has active/exploratory blocks but no practice blocks; add quiz, cloze, sequence, flashcard, essay, branching_scenario, coding, data-lab, custom_activity, artifact, or checkpoint practice"
         )
 
     if practice_count and production_count == 0:

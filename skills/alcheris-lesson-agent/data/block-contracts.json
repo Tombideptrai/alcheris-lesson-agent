@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Machine-readable source of truth for Alcheris interactive blocks, mobile behavior, and learning beats. Human docs (references/*.md) and the native in-app agent prompt both derive from this file. Shapes verified against the frontend renderer/widget code.",
   "generated_from": [
     "frontend/src/features/block/BlockRenderer.jsx",
@@ -12,7 +12,12 @@
     "frontend/src/features/player/mobileLearningBeats.js",
     "frontend/src/features/player/MobileLessonFlow.jsx",
     "frontend/src/features/player/playerBlockVisibility.js",
-    "frontend/src/features/player/blockAnswered.js"
+    "frontend/src/features/player/blockAnswered.js",
+    "frontend/src/features/player/guidedReveal.js",
+    "frontend/src/features/block/branchingscenario/branchingScenarioDefaults.js",
+    "frontend/src/features/block/galleryblock/GalleryRenderer.jsx",
+    "backend/core/artifacts.py",
+    "mcp-server/src/alcheris_mcp/tools/structure.py"
   ],
   "pedagogical_spine": {
     "flow": "encounter -> explore -> understand -> apply -> practice -> production -> reflect",
@@ -28,7 +33,8 @@
   },
   "interaction_categories": {
     "exploratory": "Learner explores an idea before/during explanation: interaction graph/distribution/equation, hotspot image, staged illustration, comparison, canvas replay, mindmap, source chart/table/image. Usually belongs on the LEFT with teaching.",
-    "practice": "Learner answers, arranges, fills, writes, codes, submits, or produces: quiz, cloze, sequence, flashcard, essay, coding, data-lab, custom_activity, artifact, checkpoint. Belongs on the RIGHT/floating panel on split pages.",
+    "practice": "Learner answers, arranges, fills, chooses a decision path, writes, codes, submits, or produces: quiz, cloze, sequence, flashcard, essay, branching_scenario, coding, data-lab, custom_activity, artifact, checkpoint. Belongs on the RIGHT/floating panel on split pages.",
+    "branching_scenario": "Use branching_scenario when learners should practise judgment, diagnosis, tutoring moves, customer conversations, clinical-style triage, ethics, or any case where choices lead to different consequences and feedback.",
     "artifact_flexibility": "artifact can be exploratory, practice, or production depending on its custom interface. If the native block inventory cannot express the intended learning experience well enough, create a sandboxed artifact instead of forcing a weak native-block fit.",
     "no_right_panel_stimulus": "Do not put the main exploratory stimulus above the right-panel practice. Keep source/guidance/exploratory visuals on the left so students can look them up while practising. If a quiz or flashcard needs a visual, include an image inside that question/card too."
   },
@@ -42,7 +48,7 @@
     "production": "Every taught skill needs at least one task where the learner PRODUCES it (sentence, paragraph, analysis, code, decision, submitted response). short_answer can count only when it genuinely asks the learner to generate something; otherwise treat it as a knowledge check. Prefer essay/custom_activity/coding/data-lab/artifact for substantial production.",
     "model_after_attempt": "For the exact task the learner is attempting, reveal the model answer after the learner tries, using checkpoint/accordion/reveal/follow-up beat. Before the attempt, provide criteria, checklist, language bank, worked example, or a different model.",
     "small_pages": "For rich source material, use many small pages rather than compressing the source. Prefer one micro-skill per page with left teaching/support and right practice. Long lessons are allowed and often required for IELTS writing, coding, and data lessons.",
-    "artifact_when_needed": "When native blocks are not enough for the learning experience, use artifact. It may be exploratory, practice, or production, but must follow the sandbox, mobile, analytics, completion/submission, and security contract.",
+    "artifact_when_needed": "When native blocks are not enough for the learning experience, use artifact. It may be exploratory, practice, or production. Build it with the alcheris-artifact-builder skill (fixed square/portrait viewport, no internal scrolling, phone fit, validator, upload); it must follow the sandbox, mobile, analytics, completion/submission, and security contract.",
     "self_audit": "Before finalizing, run a builder self-audit and fix issues found: source coverage, practice ladder depth, panel placement, block-choice fit, artifact need, model-after-attempt timing, persona consistency, visual/player route, mobile/guided flow, and answer gates. Do not merely report these issues unless the user asked for an audit only.",
     "vocabulary": "Do not dump vocabulary or long reference lists into one flat table. Use flashcard decks grouped by meaning, grouped accordions, or compact grouped lists, and pair a vocabulary bank with at least one usage exercise.",
     "illustration_placement": "Prioritize illustration as a full right-panel illustration mode with one illustration block; it demands space and is designed to shine there. Normal inline illustration is acceptable only when small/simple and clearly justified.",
@@ -71,6 +77,15 @@
     "flashcard_card_image": "Each object in content.cards may include image: '<url>' and imagePosition: 0-100 (vertical focal point, default 50). Use images for vocabulary, objects, places, and visual recall."
   },
   "blocks": {
+    "gallery": {
+      "engagement": "presentation",
+      "mobile_behavior": "full",
+      "purpose": "Several images in one block. layout 'carousel' (default) steps through one large slide with a thumbnail strip; layout 'threads' is a sideways-swipeable row of rounded cards at natural aspect ratio with peek and scroll-snap, tap to open a full-screen lightbox. Use 'threads' to compare 3+ charts or examples.",
+      "content_schema": {
+        "slides": "[{ url, caption? }]",
+        "layout": "'carousel' | 'threads' (there is no 'grid')"
+      }
+    },
     "interaction": {
       "engagement": "interactive",
       "mobile_behavior": "full",
@@ -225,11 +240,49 @@
         "data": [ { "year": "1995", "local": 70, "mobile": 3 }, { "year": "2002", "local": 70, "mobile": 50 } ]
       }
     },
+    "branching_scenario": {
+      "engagement": "interactive",
+      "mobile_behavior": "full",
+      "purpose": "Decision-path practice. Learners read a case, choose an action, get feedback, and follow the consequence path until an ending.",
+      "prefer_over": "A static case study or simple multiple-choice question when the teaching point is judgment, consequence, or adapting to a learner/customer/problem state.",
+      "content_schema": {
+        "title": "string",
+        "prompt": "string",
+        "startNodeId": "id of first node",
+        "completionMode": "'on_terminal' (default): completed when the learner reaches an ending",
+        "nodes": "array of { id:string, title:string, body:string, choices:[{ id:string, label:string, feedback:string, nextNodeId?:string }] }. Empty choices means terminal ending. Omit nextNodeId or set it to empty string to end the scenario."
+      },
+      "example": {
+        "title": "Choose the next teaching move",
+        "prompt": "A student gives a partly correct answer. Pick your response.",
+        "startNodeId": "scene-1",
+        "nodes": [
+          {
+            "id": "scene-1",
+            "title": "The answer is close, but not complete",
+            "body": "The student has the right vocabulary but misses the main trend.",
+            "choices": [
+              { "id": "choice-1", "label": "Ask a follow-up question", "feedback": "This keeps the student thinking and repairs the gap.", "nextNodeId": "scene-2" },
+              { "id": "choice-2", "label": "Give the model answer", "feedback": "Fast, but the learner misses the reasoning step.", "nextNodeId": "scene-3" }
+            ]
+          },
+          { "id": "scene-2", "title": "Better learning moment", "body": "The student corrects the answer after your prompt.", "choices": [] },
+          { "id": "scene-3", "title": "Missed practice moment", "body": "The student hears the answer, but may not know how to find it next time.", "choices": [] }
+        ]
+      },
+      "cautions": [
+        "Every nextNodeId must point to an existing node, or be intentionally blank to end.",
+        "Every path must reach an ending; a loop with no way out traps the learner in guided flow.",
+        "At least one node should contain choices, otherwise the block is just text.",
+        "Each choice needs feedback; the feedback is where the pedagogy lives."
+      ]
+    },
     "artifact": {
       "engagement": "interactive",
       "mobile_behavior": "content.mobileBehavior.mode (full | viewer | simplified | desktop_recommended | desktop_required)",
       "purpose": "Sandboxed HTML/CSS/JS learning object, like a Notion-style artifact inside the Alcheris editor/player. Use when native blocks cannot express the custom interface, simulation, drag/drop tool, or reusable micro-app.",
       "prefer_over": "A pile of static text/images or an unsafe custom_activity when the learner needs a custom interactive object.",
+      "build_with": "skills/alcheris-artifact-builder - the full contract, sizing, phone fit, validation, and upload live there. This entry is a summary.",
       "content_schema": {
         "type": "artifact",
         "title": "string",
@@ -237,7 +290,9 @@
         "version": "semantic version string, e.g. 1.0.0",
         "runtime": "html_sandbox",
         "entry": "file path present in files, e.g. /index.html",
-        "files": "object of path -> text content; include /index.html and optional /styles.css /script.js",
+        "files": "object of path -> text content (or {type, content}); include /index.html and optional /styles.css /script.js; total under 200 KB",
+        "viewport": "{ preset:'square' (1:1) | 'portrait' (9:16), scrolling:'none' } - host-owned frame; saves are normalized to a preset. No embedHeight and no internal scroll regions; split long content into steps/tabs/scenes",
+        "appearance": "optional { mode:'inherit' (host theme tokens, tokenVersion:'1') | 'fixed' }",
         "renderTargets": "{ editorBlock:true, fullPanel:true, playerDesktop:true, playerMobile:true }",
         "mobileBehavior": "{ mode:'full|viewer|simplified|desktop_recommended|desktop_required', minWidth?:number, layout?:'responsive|fixed' }",
         "completion": "{ type:'none|manual|on_interaction|on_submit' }",
@@ -258,6 +313,7 @@
         "version": "1.0.0",
         "runtime": "html_sandbox",
         "entry": "/index.html",
+        "viewport": { "preset": "square", "scrolling": "none" },
         "files": {
           "/index.html": "<main><h1>Sentence Sorter</h1><button id=\"done\">Done</button></main>",
           "/styles.css": "body { font-family: system-ui; }",
@@ -274,6 +330,7 @@
         "Do not include credentials, private URLs, auth tokens, or hidden tracking.",
         "Do not use eval-style code or remote scripts to bypass review.",
         "Do not access parent windows, cookies, local storage, or teacher storage directly.",
+        "Do not use arbitrary embedHeight values or internal overflow:auto/scroll regions. Choose square (1:1) or portrait (9:16), then split long content into steps/tabs/scenes/pages.",
         "Keep allowNetwork false in beta; networked artifacts require a reviewed deployment setting.",
         "Artifact library writes are teacher/admin-only; students may only interact and submit through the bridge.",
         "Do not mark mobileBehavior.mode full unless the artifact is actually responsive and touch-friendly.",
@@ -282,10 +339,10 @@
     }
   },
   "mobile_behavior_defaults": {
-    "full": ["text", "paragraph", "quote", "callout", "accordion", "image", "video", "gallery", "quiz", "cloze", "sequence", "flashcard", "checkpoint", "interaction", "artifact(responsive)", "coding(inline)", "essay(<=600 words)"],
+    "full": ["text", "paragraph", "quote", "callout", "accordion", "image", "video", "gallery", "quiz", "cloze", "sequence", "flashcard", "checkpoint", "branching_scenario", "chart", "table", "interaction", "artifact(responsive)", "coding(inline)", "essay(<=600 words)"],
     "viewer": ["canvas", "mindmap", "comparison", "illustration", "pdf"],
     "desktop_recommended": ["data-lab", "embed", "artifact(complex)", "coding(immersive)", "essay(>600 words)"],
-    "override_field": "content.mobileBehavior",
+    "override_field": "content.mobileBehavior (string); artifact uses content.mobileBehavior.mode ('simplified' is treated as 'viewer'); custom_activity uses content.mobilePlayer.mode",
     "override_values": ["full", "viewer", "simplified", "desktop_recommended", "desktop_required"]
   },
   "learning_beats": {
@@ -313,8 +370,8 @@
   },
   "guided_flow": {
     "description": "Guided flow reveals blocks one at a time with a Continue button. It is always on for mobile, and desktop learners can toggle it in the player header (Layers button). Same beat engine as mobile - authoring rules from learning_beats apply directly.",
-    "answer_gated_types": ["quiz", "cloze", "sequence", "essay", "custom_activity", "artifact", "interaction"],
-    "answer_gate_contract": "In guided flow, an answer-gated block HARD-BLOCKS progression until the learner completes it (the block dispatches a 'block-answered' event). Every gated block must be completable end-to-end: quiz has >=1 valid question, cloze has bracketed answers + wordBank, sequence has >=2 real items, essay has a prompt, custom_activity has a working submit step, artifact calls window.AlcherisArtifact.submit or .complete, interaction is resolvable (slider reaches end, equation puzzle has a valid target). A gated block that cannot be completed silently traps the learner. Prefer non-gated equivalents (text/callout/image/illustration/chart) for decorative blocks.",
+    "answer_gated_types": ["quiz", "cloze", "sequence", "essay", "custom_activity", "artifact", "interaction", "branching_scenario"],
+    "answer_gate_contract": "In guided flow, an answer-gated block HARD-BLOCKS progression until the learner completes it (the block dispatches a 'block-answered' event). Every gated block must be completable end-to-end: quiz has >=1 valid question, cloze has bracketed answers + wordBank, sequence has >=2 real items, essay has a prompt, custom_activity has a working submit step, artifact calls window.AlcherisArtifact.submit or .complete, interaction is resolvable (slider reaches end, equation puzzle has a valid target), branching_scenario has a valid startNodeId, no broken nextNodeId links, and every path reaches an ending (a node with no choices, or a choice with blank nextNodeId). Blocks with mobile behavior desktop_required are not gated. A gated block that cannot be completed silently traps the learner. Prefer non-gated equivalents (text/callout/image/illustration/chart) for decorative blocks.",
     "empty_block_filter": "The player silently filters empty text/paragraph/h1-h6/quote/code blocks (playerBlockVisibility.js). Do not ship placeholder-only text/heading blocks and assume they will be visible - they won't."
   },
   "sequential_order": {
@@ -337,5 +394,20 @@
   "checkpoint_block": {
     "description": "The checkpoint block is the designed staged-reveal gate: use it when a page should PAUSE and force the learner to reveal/confirm/compare before continuing (staged answer reveal, sync/compare state, recovery point). Its future guided-flow role extends per-block trigger rules to code/data-lab/artifact and desktop-heavy blocks (pass-check / manual continue / desktop-required notice) - author with that intent even where the runtime is not yet wired.",
     "not_currently_in_answer_gate_list": "checkpoint is NOT yet in guided_flow.answer_gated_types (which reflects what the running player dispatches). Design intent is to add it. Do not rely on checkpoint hard-blocking progression today, but do use it to signal the pedagogical intent of a gated moment."
+  },
+  "safe_revision": {
+    "write_to_copy": "When revising a teacher's lesson, write to a duplicate (Course Manager 'Duplicate lesson' / POST /api/lessons/{id}/duplicate/) unless the user says to edit the original. Keep the copy private and unpublished until approved.",
+    "ids_change_in_copy": "Block, page, and quiz-question ids differ in the copy. Re-read it and map by page, panel, position, and content before writing.",
+    "no_author_notes": "Never leave author notes, TODOs, placeholders, or questions to the teacher (e.g. '(can you record...)') in learner-facing text.",
+    "restructure_not_rebuild": "Move/reorder with move_block, reorder_blocks, update_page, save_lesson_structure; send raw:true for copied content. Delete-and-re-add loses formatting, ids, answers, and analytics."
+  },
+  "connector_tools": {
+    "move_block": "(lesson_id, block_id, page_index?, panel?, position?) - keeps id and content",
+    "reorder_blocks": "(lesson_id, page_index, left_ids?, right_ids?) - full order of a page's panels",
+    "save_lesson_structure": "(lesson_id, pages, deleted_block_ids?, deleted_page_ids?) - atomic; pages=[{id?, title?, layout?, rightPanelMode?, left:[entry], right:[entry]}]; entry = '<uuid>' | {id} | {id, content} | {type, content, id?}; raw:true per entry; every existing page/block must be placed or deleted",
+    "update_page": "(lesson_id, page_index, title?, layout?, right_panel_mode?)",
+    "add_block": "(lesson_id, page_index, panel, block_type, content?, position?, raw=false)",
+    "update_block": "(lesson_id, page_index, block_id, content, new_type?, raw=false) - merges unless raw",
+    "errors": "edit_conflict (409): re-read and re-apply; block_contract_invalid (400): fix block_contract_errors, nothing saved"
   }
 }

@@ -27,7 +27,7 @@ Choose layout before choosing blocks:
 Do not classify every interactive object as practice. Use two categories:
 
 - Exploratory interactions help learners encounter, inspect, manipulate, or understand an idea: `interaction` graph/distribution/equation, hotspot image, illustration, comparison, canvas replay, mindmap, source chart/table/image. These usually belong on the left with teaching.
-- Practice interactions make learners answer, arrange, fill, write, code, submit, or produce: quiz, cloze, sequence, flashcard, essay, coding, data-lab, custom_activity, artifact, checkpoint. These belong on the right/floating panel on split pages.
+- Practice interactions make learners answer, arrange, fill, choose a path, write, code, submit, or produce: quiz, cloze, sequence, flashcard, essay, branching_scenario, coding, data-lab, custom_activity, artifact, checkpoint. These belong on the right/floating panel on split pages.
 - `artifact` is flexible: it can be exploratory, practice, or production depending on the custom interface. Use it when the native block inventory cannot express the learning experience well enough.
 
 Do not put the main exploratory stimulus above the right-panel practice. Keep the source, guidance, and exploratory visuals where students can look them up while practising. If a quiz or flashcard item needs a visual, add that image inside the question/card in addition to the page source.
@@ -79,7 +79,7 @@ Use `table` for ingredient lists, `callout` for rules and traps, exploratory int
 - `image`: charts, diagrams, screenshots, worked visuals, annotated source material. Include `altText` and a useful caption.
 - `video`: hosted or uploaded video.
 - `recording`: audio/video recording task or media capture.
-- `gallery`: multiple images, visual examples, before/after variants, artwork or product comparisons.
+- `gallery`: multiple images, visual examples, before/after variants, artwork or product comparisons. `content.layout: "carousel"` (default) shows one large slide with thumbnails; `"threads"` shows a sideways-swipeable row of rounded cards at natural aspect ratio (tap for full screen). Use `threads` when learners should scan and compare 3+ charts or examples; it reads especially well on phones.
 - `pdf`: document handout, source article, technical spec, paper, worksheet, or long reading.
 - `embed`: external interactive/site/resource in an iframe-like block.
 
@@ -90,8 +90,9 @@ Use `table` for ingredient lists, `callout` for rules and traps, exploratory int
 - `sequence`: ordering steps, workflows, process logic, chronology, body structure, algorithm order. Teach the order first.
 - `flashcard`: memory checks only: vocabulary, definitions, commands, formulas, key distinctions, symbols. Do not use for complex explanation. Each card supports an `image` (URL) and `imagePosition` (0-100) - add images for vocabulary, objects, and places rather than text-only cards.
 - `essay`: long-form writing or open response.
+- `branching_scenario`: decision-path practice. Use when learners practise judgment, tutoring moves, diagnosis, customer conversations, ethics, or other case-based choices. Content uses `title`, `prompt`, `startNodeId`, and `nodes`; each node has `id`, `title`, `body`, and `choices`. Each choice has `id`, `label`, `feedback`, and optional `nextNodeId`. Empty `choices` means an ending; blank `nextNodeId` intentionally ends the scenario. Answer-gated in guided flow, so every path must reach an ending. Mobile: full.
 - `custom_activity`: structured teacher-defined activity built from safe JSON primitives such as instructions, short/long text, choice, checklist, file upload reference, and submit. Use when one activity needs multiple fields, review rules, mobile behavior, completion rules, analytics events, or checkpoint signals. Do not include executable code.
-- `artifact`: sandboxed HTML/CSS/JS learning object, like a Notion-style artifact inside the lesson editor/player. Use when the learning object needs a custom interface, simulation, manipulative, drag/drop activity, structured production desk, or visual tool that native blocks cannot express well enough. It can serve exploratory, practice, or production purposes, but still must obey Alcheris render targets, mobile behavior, completion, submission, analytics, and security rules. `allowNetwork` is off by default; artifacts reach Alcheris-managed asset URLs (teacher assets) only. Students cannot edit artifact source code - authoring is teacher/admin only. Do not use it for auth, arbitrary storage access, hidden tracking, unsandboxed scripts, or bypassing native block contracts.
+- `artifact`: sandboxed HTML/CSS/JS learning object, like a Notion-style artifact inside the lesson editor/player. Use when the learning object needs a custom interface, simulation, step-through transformation, manipulative, drag/drop activity, structured production desk, or visual tool that native blocks cannot express well enough. It can serve exploratory, practice, or production purposes. Build it with the sibling skill `skills/alcheris-artifact-builder` (fixed square/portrait frame, no internal scrolling, phone fit, theme tokens, validator, upload). `allowNetwork` is off by default; artifacts reach Alcheris-managed asset URLs (teacher assets) only. Students cannot edit artifact source code - authoring is teacher/admin only. Do not use it for auth, arbitrary storage access, hidden tracking, unsandboxed scripts, or bypassing native block contracts.
 - `checkpoint`: reveal solution, sync/compare state, staged answer reveal, recovery point. In guided flow, use `checkpoint` explicitly when a page should PAUSE and force the learner to reveal/confirm before continuing - it is the designed "gate" block for staged reveal. (The runtime is still adding per-block trigger rules for code/data-lab/artifact; author with the gate intent even where the enforcement isn't fully wired yet.)
 
 ### Interactive And Visual Thinking
@@ -168,7 +169,10 @@ Use this quick test:
 - Need learners to explore a live concept or parameter before/during explanation: use `interaction` on the teaching side.
 - Need learners to practise with a live workspace: use `data-lab`, `coding`, `artifact`, or `custom_activity` on the practice side.
 - Need a reusable custom interface, simulation, drag/drop micro-tool, exploratory manipulative, custom practice flow, production desk, or generated HTML/JS object that native blocks cannot express well enough: use `artifact`.
+- Need learners to make a decision in a realistic situation and see its consequences: use `branching_scenario`.
+- Need learners to compare several charts/examples side by side: use `gallery` with `layout: "threads"`.
 - Need learners to produce final written work: use `essay`.
+- Need learners to practise decisions with consequences, such as choosing a teaching move, diagnosing a case, selecting a response strategy, or exploring "what happens if I do X?": use `branching_scenario`.
 - Need learners to complete a structured multi-field submission, such as choose a stance + write an argument + attach evidence + submit for review: use `custom_activity`.
 - Need learners to produce final code or UI work: use `coding` in the matching full-panel mode.
 - Need learners to reveal answers after effort: use `accordion` or `checkpoint`.
@@ -186,6 +190,7 @@ Do not default to multiple-choice quizzes. A good lesson feels varied. Reach for
 - `canvas`: annotate a chart, sketch a diagram, connect points.
 - `gallery`: multiple worked examples or before/after variants.
 - `checkpoint`: staged answer reveal after the learner attempts.
+- `branching_scenario`: realistic case decisions with consequence feedback. Ideal for pedagogy, roleplay, diagnosis, ethics, customer support, and strategy practice.
 - Quiz question types beyond `multiple_choice`: `short_answer` (one-line production), `multiple_select` (choose all that apply), `cloze` (inline fill-gap).
 
 For every skill the lesson teaches, include a practice ladder: guided check -> constrained practice -> varied practice -> production. The exact count depends on content, but it should be dense enough for learners to remember the pattern; one quiz is not enough. Every skill also needs at least one PRODUCTION task (write / build / use it), not only recognition. A `short_answer` question can count as production only when it asks the learner to generate a real sentence, analysis, decision, or answer; otherwise treat it as a knowledge check.

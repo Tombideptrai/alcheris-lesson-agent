@@ -27,13 +27,15 @@ blocks being visible for context; put the framing in the block's title, heading,
 first sentence.
 
 **Answer-gate contract.** In guided flow, `quiz`, `cloze`, `sequence`, `essay`,
-`custom_activity`, and `interaction` blocks HARD-BLOCK progression until the learner
-completes or engages with them. A quiz/cloze/sequence/essay/custom_activity is practice;
+`custom_activity`, `artifact`, `interaction`, and `branching_scenario` blocks HARD-BLOCK
+progression until the learner completes or engages with them (blocks whose mobile behavior
+is `desktop_required` are exempt). A quiz/cloze/sequence/essay/custom_activity/branching_scenario is practice;
 an `interaction` block is usually exploratory teaching, but it still counts as a gated
 engagement step because the learner must touch/manipulate it to continue. Every gated
 block must be completable end-to-end (quiz with a valid answer, cloze with bracketed
 answers + wordBank, >=2 real sequence items, essay with prompt, custom_activity with a
-working submit step, interaction that is resolvable/engageable). A gated block that
+working submit step, artifact that calls `AlcherisArtifact.submit`/`complete`, interaction
+that is resolvable/engageable, branching_scenario with a valid start node, no broken `nextNodeId` links, and every path reaching an ending). A gated block that
 cannot be completed silently traps the learner. Prefer non-gated equivalents
 (text/callout/image/illustration/chart) for decorative blocks not meant to be completed.
 
@@ -90,12 +92,14 @@ Follow these so auto-generation produces a clean mobile path:
 
 | Behavior | Blocks | Meaning |
 | --- | --- | --- |
-| `full` (mobile-native) | text/headings/quote/callout/accordion, image, video, gallery, quiz, cloze, sequence, flashcard, checkpoint, `interaction` (graph/distribution/equation), responsive `artifact`, inline coding, small essay | Works fully on mobile |
+| `full` (mobile-native) | text/headings/quote/callout/accordion, image, video, gallery (both `carousel` and `threads`), quiz, cloze, sequence, flashcard, checkpoint, `branching_scenario`, `chart`, table, `interaction` (graph/distribution/equation), responsive `artifact`, inline coding, small essay | Works fully on mobile |
 | `viewer` | `canvas`, `mindmap`, `comparison`, `illustration`, pdf | Read/watch only on phone |
 | `desktop_recommended` | `data-lab`, `embed`, immersive `coding`, complex `artifact`, essay > 600 words | Usable but better on desktop |
 
-Override per block with `content.mobileBehavior` (`full | viewer | simplified |
-desktop_recommended | desktop_required`).
+Override per block with `content.mobileBehavior` set to a string (`full | viewer | simplified |
+desktop_recommended | desktop_required`). Exceptions: `artifact` uses
+`content.mobileBehavior.mode` (where `simplified` is treated as `viewer`), and
+`custom_activity` uses `content.mobilePlayer.mode`.
 
 **This intersects with the interactive-first rule.** For interactivity that must work on
 mobile, prefer `interaction` widgets - they are `full`. Treat `canvas`, `illustration`,
