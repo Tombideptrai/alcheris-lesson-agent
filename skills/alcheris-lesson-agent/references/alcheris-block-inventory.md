@@ -79,7 +79,7 @@ Use `table` for ingredient lists, `callout` for rules and traps, exploratory int
 - `image`: charts, diagrams, screenshots, worked visuals, annotated source material. Include `altText` and a useful caption.
 - `video`: hosted or uploaded video.
 - `recording`: audio/video recording task or media capture.
-- `gallery`: multiple images, visual examples, before/after variants, artwork or product comparisons. `content.layout: "carousel"` (default) shows one large slide with thumbnails; `"threads"` shows a sideways-swipeable row of rounded cards at natural aspect ratio (tap for full screen). Use `threads` when learners should scan and compare 3+ charts or examples; it reads especially well on phones.
+- `gallery`: multiple images, visual examples, before/after variants, artwork or product comparisons. `content.layout: "threads"` (default) shows a sideways-swipeable row of rounded cards at natural aspect ratio (tap for full size); it suits scanning and comparing 3+ charts or examples and reads especially well on phones. `"carousel"` (opt-in) shows one large slide with a thumbnail strip; pick it only when learners should study one image at a time in a set order.
 - `pdf`: document handout, source article, technical spec, paper, worksheet, or long reading.
 - `embed`: external interactive/site/resource in an iframe-like block.
 
@@ -170,7 +170,7 @@ Use this quick test:
 - Need learners to practise with a live workspace: use `data-lab`, `coding`, `artifact`, or `custom_activity` on the practice side.
 - Need a reusable custom interface, simulation, drag/drop micro-tool, exploratory manipulative, custom practice flow, production desk, or generated HTML/JS object that native blocks cannot express well enough: use `artifact`.
 - Need learners to make a decision in a realistic situation and see its consequences: use `branching_scenario`.
-- Need learners to compare several charts/examples side by side: use `gallery` with `layout: "threads"`.
+- Need learners to compare several charts/examples side by side: use `gallery` (the default `threads` layout).
 - Need learners to produce final written work: use `essay`.
 - Need learners to practise decisions with consequences, such as choosing a teaching move, diagnosing a case, selecting a response strategy, or exploring "what happens if I do X?": use `branching_scenario`.
 - Need learners to complete a structured multi-field submission, such as choose a stance + write an argument + attach evidence + submit for review: use `custom_activity`.

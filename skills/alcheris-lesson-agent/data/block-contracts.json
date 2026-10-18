@@ -80,10 +80,10 @@
     "gallery": {
       "engagement": "presentation",
       "mobile_behavior": "full",
-      "purpose": "Several images in one block. layout 'carousel' (default) steps through one large slide with a thumbnail strip; layout 'threads' is a sideways-swipeable row of rounded cards at natural aspect ratio with peek and scroll-snap, tap to open a full-screen lightbox. Use 'threads' to compare 3+ charts or examples.",
+      "purpose": "Several images in one block. layout 'threads' (default; also used when layout is omitted) is a sideways-swipeable row of rounded cards at natural aspect ratio with peek and scroll-snap, tap to open a full-size lightbox - good for comparing 3+ charts or examples. layout 'carousel' (opt-in) steps through one large slide with a thumbnail strip. Pick carousel only when learners should study one image at a time in a set order.",
       "content_schema": {
         "slides": "[{ url, caption? }]",
-        "layout": "'carousel' | 'threads' (there is no 'grid')"
+        "layout": "'threads' (default) | 'carousel' (there is no 'grid')"
       }
     },
     "interaction": {

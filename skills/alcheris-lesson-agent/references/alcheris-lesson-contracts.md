@@ -162,7 +162,7 @@ Minimum visible content by block type:
 - `image`: `content.url` must be non-empty. Add `caption` and `altText` for teaching clarity.
 - `table`: `content.headers` and `content.rows` should be non-empty arrays. Use for structured comparisons, sentence patterns, ingredient lists, and data tables instead of flattening columns into a text block or generating a table screenshot.
 - `video`: `content.url` must be non-empty.
-- `gallery`: `content.slides` should contain visible slides (`[{"url", "caption"?}]`). `content.layout` is `"carousel"` (default: one large slide with a thumbnail strip) or `"threads"` (a sideways-swipeable row of rounded cards at natural aspect ratio with peek and scroll-snap; tap opens a full-screen lightbox). Use `threads` for 3+ charts or examples learners should compare; use `carousel` to step through one image at a time. There is no `grid` layout.
+- `gallery`: `content.slides` should contain visible slides (`[{"url", "caption"?}]`). `content.layout` is `"threads"` (the default, also used when `layout` is omitted: a sideways-swipeable row of rounded cards at natural aspect ratio with peek and scroll-snap; tap opens a full-size lightbox) or `"carousel"` (opt-in: one large slide with a thumbnail strip). Use `threads` for 3+ charts or examples learners should compare; set `carousel` only to step through one image at a time in a set order. There is no `grid` layout.
 - `pdf`: include a non-empty URL or file reference.
 - `embed`: include a non-empty `embedUrl`.
 - `recording`: include a media URL for playback, or use only when the learner is meant to record.
