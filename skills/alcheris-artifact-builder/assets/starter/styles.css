@@ -1,0 +1,166 @@
+:root {
+  color-scheme: light dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* UI chrome follows the host theme (tokens are injected by Alcheris). */
+  --bg: var(--color-background, #ffffff);
+  --fg: var(--color-foreground, #111827);
+  --muted: var(--color-muted, #f4f5f7);
+  --muted-fg: var(--color-muted-foreground, #6b7280);
+  --border: var(--color-border, #e5e7eb);
+  --primary: var(--color-primary, #4f46e5);
+  --primary-fg: var(--color-primary-foreground, #ffffff);
+  --success: var(--color-success, #059669);
+  --radius: var(--radius, 8px);
+  /* Data colours are fixed so series never collide with a teacher's primary. */
+  --c1: #3b82f6;
+  --c2: #e07a2f;
+  --c3: #1f9e89;
+  --c4: #c2417a;
+  --c5: #7c8591;
+  --pad: clamp(10px, 3vw, 18px);
+}
+
+/* Series colours get a lighter set on dark backgrounds so lines and bars keep
+   contrast. The host sets data-alcheris-theme; the media query covers local
+   preview and fixed-appearance artifacts. */
+:root[data-alcheris-theme="dark"] {
+  --c1: #60a5fa;
+  --c2: #f59e5b;
+  --c3: #34c3ab;
+  --c4: #e0679e;
+  --c5: #a3acb7;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-alcheris-theme="light"]) {
+    --c1: #60a5fa;
+    --c2: #f59e5b;
+    --c3: #34c3ab;
+    --c4: #e0679e;
+    --c5: #a3acb7;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+/* No height on html/body/.artifact: the host may size the frame FROM the
+   content height, so anything sized from the frame (vh, 100%) sizes itself. */
+html, body { margin: 0; overflow: hidden; background: var(--bg); color: var(--fg); }
+button { font: inherit; }
+
+.artifact {
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  gap: 10px;
+  padding: var(--pad);
+}
+
+.tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--muted);
+}
+.tabs:empty { display: none; }
+.tab {
+  min-height: 36px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  color: var(--muted-fg);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.tab:hover { color: var(--fg); }
+.tab.active { border-color: color-mix(in srgb, var(--primary) 25%, var(--border)); background: var(--bg); color: var(--primary); }
+.tab.done::after { content: " ✓"; color: var(--success); }
+
+.step-header { min-height: 92px; }
+.eyebrow { margin: 0 0 4px; color: var(--primary); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+h1 { margin: 0; font-size: clamp(17px, 4.6vw, 22px); line-height: 1.2; }
+#step-desc { margin: 5px 0 0; color: var(--muted-fg); font-size: 13px; line-height: 1.45; }
+
+/* The drawing is sized from the frame WIDTH. The cap keeps the whole
+   artifact inside a 9:16 frame: 290px = tabs + header + footer + gaps +
+   padding. Re-measure if you change the chrome. Set --ratio from JS if the
+   drawing's aspect ratio changes per step. */
+.stage {
+  --ratio: 1.2222;
+  position: relative;
+  height: min(calc((100vw - 2 * var(--pad)) * var(--ratio)), calc(100vw * 16 / 9 - 290px));
+  min-height: 220px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+#stage { display: block; width: 100%; height: 100%; }
+
+footer { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
+.primary, .secondary { min-height: 42px; padding: 8px 14px; border-radius: var(--radius); font-weight: 650; cursor: pointer; white-space: nowrap; }
+.primary { justify-self: end; border: 1px solid var(--primary); background: var(--primary); color: var(--primary-fg); }
+.primary.done { border-color: var(--success); background: var(--success); color: #fff; }
+.secondary { justify-self: start; border: 1px solid var(--border); background: var(--bg); color: var(--muted-fg); }
+.secondary:disabled { opacity: .4; cursor: default; }
+button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.dots { display: flex; justify-content: center; gap: 5px; }
+.dots span { width: 7px; height: 7px; border-radius: 9px; background: var(--border); transition: width 250ms ease, background-color 250ms ease; }
+.dots span.on { width: 18px; background: var(--primary); }
+
+/* Optional check step: an overlay at the bottom of the stage, so it never
+   changes the artifact's height (which would break the 9:16 fit). */
+.check {
+  position: absolute;
+  inset: auto 8px 8px 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  box-shadow: 0 4px 16px rgb(0 0 0 / .12);
+}
+.check[hidden] { display: none; }
+.check-prompt { margin: 0 0 8px; font-size: 13px; font-weight: 650; }
+.check-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.check-options button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.check-options button.wrong { border-color: var(--color-error, #dc2626); color: var(--color-error, #dc2626); }
+.check-options button.right { border-color: var(--success); background: var(--success); color: #fff; }
+.check-options button.reveal { border-style: dashed; color: var(--muted-fg); }
+.check-feedback { margin: 6px 0 0; min-height: 1em; font-size: 12px; color: var(--muted-fg); }
+
+/* Phones get a fixed 9:16 frame about 320-383px wide: every pixel of chrome
+   comes out of the drawing, so tighten it and lower the cap reserve. */
+@media (max-width: 420px) {
+  .artifact { gap: 8px; }
+  .tab { min-height: 30px; font-size: 12px; }
+  .step-header { min-height: 0; }
+  h1 { font-size: 16px; }
+  #step-desc { font-size: 12px; line-height: 1.35; }
+  .stage { height: min(calc((100vw - 2 * var(--pad)) * var(--ratio)), calc(100vw * 16 / 9 - 215px)); }
+  .primary, .secondary { min-height: 36px; padding: 6px 12px; }
+}
+
+/* ---------- SVG scene (replace with your own) ---------- */
+svg text { font-family: inherit; }
+.label { fill: var(--muted-fg); font-size: 11px; font-weight: 600; text-anchor: middle; }
+.value { fill: var(--fg); font-size: 12px; font-weight: 700; text-anchor: middle; opacity: 0; transition: opacity 300ms ease; }
+.value.show { opacity: 1; }
+.axis { fill: none; stroke: var(--muted-fg); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 650ms ease; }
+.axis.show { stroke-dashoffset: 0; }
+.bar { transform-box: fill-box; transform-origin: bottom; transform: scaleY(0); transition: transform 700ms cubic-bezier(.2,.8,.2,1); }
+.bar.show { transform: scaleY(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; transition-delay: 0s !important; }
+}

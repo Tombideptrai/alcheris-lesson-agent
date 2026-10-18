@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Artifact</title>
+  </head>
+  <body>
+    <main class="artifact">
+      <nav class="tabs" id="tabs" aria-label="Choose a part"></nav>
+
+      <header class="step-header">
+        <p id="step-label" class="eyebrow"></p>
+        <h1 id="step-title"></h1>
+        <p id="step-desc"></p>
+      </header>
+
+      <div class="stage">
+        <svg id="stage" viewBox="0 0 360 440" preserveAspectRatio="xMidYMid meet" role="img"></svg>
+        <div class="check" id="check" hidden>
+          <p class="check-prompt" id="check-prompt"></p>
+          <div class="check-options" id="check-options"></div>
+          <p class="check-feedback" id="check-feedback" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <footer>
+        <button id="back" class="secondary" type="button">← Back</button>
+        <div class="dots" id="dots" aria-hidden="true"></div>
+        <button id="next" class="primary" type="button">Next →</button>
+      </footer>
+    </main>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>

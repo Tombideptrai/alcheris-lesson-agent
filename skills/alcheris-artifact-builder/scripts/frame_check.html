@@ -1,0 +1,125 @@
+<!doctype html>
+<!--
+  Frame check for Alcheris artifacts.
+  Serve a folder that contains both this file and your built artifact, then open:
+    frame_check.html?src=/dist/<slug>/index.html
+  It loads the artifact in the frame sizes Alcheris uses, steps through every
+  tab and step (expects .artifact, .tab, #next, svg#stage like the starter),
+  and reports fit and drawing scale. The JSON report is also on window.frameReport.
+-->
+<meta charset="utf-8" />
+<title>Artifact frame check</title>
+<style>
+  body { margin: 0; padding: 12px; background: #0d1117; color: #c9d1d9; font: 13px/1.4 system-ui, sans-serif; }
+  .row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  figure { margin: 0; }
+  figcaption { margin-bottom: 6px; }
+  iframe { display: block; border: 1px solid #444; background: #fff; }
+  pre { white-space: pre-wrap; background: #161b22; padding: 10px; border-radius: 6px; }
+  .ok { color: #3fb950; } .bad { color: #f85149; }
+</style>
+<h3>Artifact frame check</h3>
+<pre id="report">running…</pre>
+<div class="row" id="frames"></div>
+<script>
+const src = new URLSearchParams(location.search).get('src');
+const FRAMES = [
+  { id: 'phone-320', w: 320, h: Math.round(320 * 16 / 9), mode: 'fixed' },
+  { id: 'phone-343', w: 343, h: Math.round(343 * 16 / 9), mode: 'fixed' },
+  { id: 'desktop-620', w: 620, h: Math.round(620 * 16 / 9), mode: 'fixed' },
+  { id: 'adaptive-343', w: 343, h: 300, mode: 'adaptive' },
+];
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const report = document.getElementById('report');
+if (!src) report.textContent = 'Add ?src=/path/to/dist/<slug>/index.html';
+
+async function load(f) {
+  const fig = document.createElement('figure');
+  fig.innerHTML = `<figcaption>${f.id} (${f.w}×${f.h}, ${f.mode})</figcaption>`;
+  const frame = document.createElement('iframe');
+  frame.style.width = f.w + 'px';
+  frame.style.height = f.h + 'px';
+  fig.appendChild(frame);
+  document.getElementById('frames').appendChild(fig);
+  await new Promise((r) => { frame.onload = r; frame.src = src + (src.includes('?') ? '&' : '?') + 'v=' + Date.now(); });
+  await wait(400);
+  return frame;
+}
+
+function measure(doc) {
+  const root = doc.querySelector('.artifact') || doc.body;
+  const height = root.getBoundingClientRect().height;
+  const svg = doc.querySelector('svg#stage') || doc.querySelector('svg');
+  let scale = null;
+  if (svg && svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width) {
+    const vb = svg.viewBox.baseVal;
+    const r = svg.getBoundingClientRect();
+    scale = Math.min(r.width / vb.width, r.height / vb.height);
+  }
+  return { height, scale };
+}
+
+async function walk(frame) {
+  const doc = frame.contentDocument;
+  const tabs = doc.querySelectorAll('.tab');
+  const tabCount = Math.max(1, tabs.length);
+  let tallest = 0; let minScale = Infinity; let steps = 0;
+  for (let t = 0; t < tabCount; t++) {
+    if (tabs.length) { tabs[t].click(); await wait(150); }
+    const dots = doc.querySelectorAll('#dots span').length || 1;
+    for (let s = 0; s < dots; s++) {
+      if (s > 0) {
+        const next = doc.getElementById('next') || doc.querySelector('[data-next], button.primary');
+        if (!next) break;
+        next.click(); await wait(150);
+      }
+      const m = measure(doc);
+      tallest = Math.max(tallest, m.height);
+      if (m.scale !== null) minScale = Math.min(minScale, m.scale);
+      steps++;
+    }
+  }
+  return { tallest: Math.ceil(tallest), minScale: minScale === Infinity ? null : +minScale.toFixed(2), steps };
+}
+
+async function adaptive(frame) {
+  // Copy the host: frame height follows reported content height, repeatedly.
+  const samples = [];
+  for (let i = 0; i < 8; i++) {
+    const doc = frame.contentDocument;
+    const body = doc.body;
+    const bodyTop = body.getBoundingClientRect().top;
+    const bottom = Array.from(body.children).reduce((b, c) => Math.max(b, c.getBoundingClientRect().bottom - bodyTop), 0);
+    const h = Math.ceil(Math.max(body.offsetHeight, bottom));
+    frame.style.height = h + 'px';
+    samples.push(h);
+    await wait(120);
+  }
+  const last = samples.slice(-4);
+  return { samples, settled: last.every((v) => v === last[0]), finalHeight: last[last.length - 1] };
+}
+
+(async () => {
+  if (!src) return;
+  const out = {};
+  for (const f of FRAMES) {
+    const frame = await load(f);
+    if (f.mode === 'adaptive') {
+      const a = await adaptive(frame);
+      const w = await walk(frame);
+      const after = await adaptive(frame);
+      out[f.id] = { ...a, settledAfterSteps: after.settled, grew: after.finalHeight > a.finalHeight + 2 && w.tallest <= a.finalHeight, minScale: w.minScale };
+    } else {
+      const w = await walk(frame);
+      out[f.id] = { frame: [f.w, f.h], ...w, fits: w.tallest <= f.h + 1 /* real frame is width*16/9 unrounded */, readableOnPhone: f.w < 420 ? (w.minScale === null || w.minScale >= 0.8) : undefined };
+    }
+  }
+  window.frameReport = out;
+  const problems = Object.entries(out).flatMap(([id, r]) => [
+    r.fits === false ? `${id}: content ${r.tallest}px taller than frame ${r.frame[1]}px (clipped)` : null,
+    r.readableOnPhone === false ? `${id}: drawing scaled to ${r.minScale}, aim for >= 0.8` : null,
+    r.settled === false ? `${id}: adaptive frame height keeps changing (vh/100% sizing?)` : null,
+  ].filter(Boolean));
+  report.innerHTML = (problems.length ? `<span class="bad">${problems.length} problem(s)</span>\n${problems.join('\n')}` : '<span class="ok">All frames fit.</span>') + '\n\n' + JSON.stringify(out, null, 2);
+})();
+</script>
