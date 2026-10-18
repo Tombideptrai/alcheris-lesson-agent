@@ -9,6 +9,61 @@ description: Build, edit, audit, and repair interactive self-study lessons in Al
 
 Create Alcheris lessons as real self-study learning experiences for the target subject, not teacher lesson plans and not content dumps. Every lesson must have visible learner-facing explanation, purposeful media or examples when the content needs them, active practice, and a verified student/player route before delivery.
 
+## Permission And Scope Gate
+
+Alcheris edits often touch live courses, databases, and student-facing content. Do not treat a broad creation request as permission to write a large course immediately.
+
+Before creating, replacing, publishing, deleting, or bulk-generating a course or many lessons, explicitly confirm:
+
+- the target location: local app, staging, production, or an export file only;
+- the owner/account/course to modify or create under;
+- whether the user wants a draft, published course, or only a proposed architecture;
+- whether existing course content should be preserved, replaced, or ignored;
+- the acceptable first deliverable: architecture only, one exemplar lesson, a small batch, or full generation.
+
+Exception: if the user names an exact target lesson/course and clearly asks for a narrow edit, proceed within that scope after reading the target.
+
+For very large or publication-grade requests, ask for approval after presenting the course architecture and before writing to the app/database. A single sentence such as "make a course" is not enough authorization to bulk-create hundreds of pages or thousands of exercises.
+
+## Large Course And Publication-Quality Gate
+
+If the requested output is book-length, commercially publishable, exam-prep scale, or contains hundreds/thousands of exercises, do not generate the entire course in one pass. Use this sequence:
+
+1. Create a compact course architecture: modules, lesson list, learner outcomes, assessment rhythm, and content standards.
+2. Build one full gold-standard exemplar lesson or chapter first.
+3. Audit the exemplar for pedagogy, voice, exercise quality, CEFR fit, and player validity.
+4. Ask the user to approve or revise the exemplar standard.
+5. Generate the remaining lessons in staged batches that preserve that standard.
+
+Never use placeholder content to satisfy requested volume. Forbidden patterns include:
+
+- "Sentence 1", "item 1", "Corrected sentence 1", "Vietnamese learner sentence 1";
+- generic stems that could belong to any topic;
+- repeated templates with only numbering changed;
+- fake correction banks where the wrong sentence, correction, reason, or teaching note is not real;
+- exercise counts that are met by low-quality cloning.
+
+If the requested scope exceeds what can be produced to the stated quality in the current turn, deliver the approved first stage rather than lowering quality. Say what stage was completed and what remains; do not pretend a skeleton is a finished course.
+
+## Language-Learning Content Quality Gate
+
+For grammar, vocabulary, speaking, writing, IELTS/Cambridge/VSTEP, ESL/EFL, or CEFR lessons, content quality is part of the contract, not an optional polish pass.
+
+Before saving language-learning content, check that:
+
+- every exercise sentence is natural, level-appropriate, and teaches the target point;
+- controlled practice is easy but not meaningless;
+- guided practice makes learners choose based on meaning, not only visible signal words;
+- mixed practice includes plausible distractors from nearby grammar points;
+- error-correction items contain exactly one real error;
+- sentence transformations have a real model answer or accepted-answer guidance;
+- speaking prompts require the target grammar in a communicative answer;
+- writing tasks include a purpose, audience/genre, target grammar requirement, and checklist;
+- common L1 mistakes explain the transfer problem, not only the corrected sentence;
+- answer explanations state the rule and why tempting alternatives are wrong where applicable.
+
+For Vietnamese learners specifically, common-mistake sections must be based on plausible Vietnamese-to-English transfer patterns, such as missing auxiliaries, overusing "be", direct translation of word order, article omission, countable/uncountable confusion, tense-aspect flattening, preposition transfer, and adjective/verb category confusion. Do not invent vague "Vietnamese learner sentence" placeholders.
+
 ## Voice, Format, and the Spine
 
 ### Persona (voice) - decide before writing a word
@@ -65,6 +120,8 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
    - If editing, read the existing lesson first with `get_lesson` or `/api/lessons/{id}/`.
    - Preserve existing content unless the user asks to replace it.
    - Never publish, delete, or overwrite a full lesson without explicit user intent.
+   - For new course creation, pass the Permission And Scope Gate before writing anything to Alcheris.
+   - For large or publication-grade course creation, pass the Large Course And Publication-Quality Gate and create an exemplar first.
    - Decide persona before writing learner-facing content. Ask the user if no persona/voice/audience vibe is given; infer and declare it only when the user provided enough signal.
    - Check the course's Sequential Order setting (`course.linear_progression`) and the lesson's `unlock_requirements`. In a sequential-order course, EVERY lesson must be completable start-to-finish and every answer-gated block must be resolvable, because a broken quiz or artifact blocks the student from unlocking the next lesson. Flag any lesson you cannot make completable rather than silently shipping a dead-end.
    - Reuse teacher assets when applicable. The teacher's `/teacher/assets` library (`/api/assets/`) already contains uploaded images/video/PDFs/DOCX/SVG - prefer those Alcheris-managed URLs over one-off external URLs when the same media recurs in a course or is referenced from an `artifact` (whose sandbox has network off by default).
