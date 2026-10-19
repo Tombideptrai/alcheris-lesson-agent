@@ -13,7 +13,7 @@ LEFT
   - image: <screenshot of the finished line chart>   <-- static; trend already visible
   - text: bullet list of tips
 RIGHT (rightPanelMode: essay)
-  - essay: "Write only the overall in 35-60 words."
+  - essay: "Write only the overall in up to 60 words."
 ```
 
 The learner reads a finished chart and types. Nothing to explore. The chart also spoils
@@ -55,8 +55,7 @@ learner drags to uncover the trend and forms the "big story" themselves before w
     {
       "type": "essay",
       "content": {
-        "prompt": "Write only the overall in 35-60 words. Name the biggest movements you just watched, not exact figures.",
-        "minWords": 35,
+        "prompt": "Write only the overall in up to 60 words. Name the biggest movements you just watched, not exact figures.",
         "maxWords": 60
       }
     }

@@ -642,8 +642,6 @@ def validate_block(block: dict, page_index: int, block_index: int, warnings: lis
     elif btype == "essay":
         if not has_text(content.get("prompt")):
             errors.append(f"{label}: essay needs a prompt")
-        if not isinstance(content.get("minWords"), int) or content.get("minWords", 0) <= 0:
-            warnings.append(f"{label}: essay should include positive minWords")
     elif btype == "branching_scenario":
         validate_branching_scenario(content, label, warnings, errors)
     elif btype == "custom_activity":

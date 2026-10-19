@@ -257,7 +257,7 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
 - No sequence has fewer than 2 items.
 - No sequence, cloze, or flashcard block lacks a learner-facing task title/instructions.
 - No cloze lacks bracketed answers such as `[answer]`; for language practice, prefer alternatives like `[rose/increased/climbed]`.
-- No essay lacks a prompt and word target.
+- No essay lacks a prompt and a `maxWords` cap (essays have no minimum word count; do not write `minWords`).
 - No custom_activity or artifact violates the contract in `references/alcheris-lesson-contracts.md`; every custom block must support the mobile player appropriately and include baseline analytics events.
 - Chart/data lessons include at least one visual stimulus. If the data moves over time, a live `interaction` graph is used rather than a static chart image, unless the user asked for a static image.
 - Quiz questions that refer to a chart, diagram, map, or picture include an `image`, and vocabulary/visual flashcards include card `image`s, instead of being text-only when a visual would help.
