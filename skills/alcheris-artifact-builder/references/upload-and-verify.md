@@ -32,7 +32,22 @@ Or, as part of a page restructure, use `save_lesson_structure`. Every existing b
    ```python
    json.dumps(stored, sort_keys=True) == json.dumps(built, sort_keys=True)
    ```
+   For one block, `get_block_content(lesson_id, block_id)` is smaller than the whole lesson.
 3. Report the result: identical, or what differs.
+4. Open the page in the player. In guided flow, reveal blocks with `>` ("Next step") until the artifact appears, then confirm it loads without "Activity unavailable" and the frame fits at phone width.
+
+## Large definitions
+
+A game with its config inlined is often 15–30 KB of JSON. Passing that as a tool argument through the hosted connector is slow and easy to corrupt. With a local Alcheris MCP install, call the tool function from a script instead, so the file goes from disk to the API untouched:
+
+```python
+import asyncio, json
+from alcheris_mcp.tools import blocks   # needs ALCHERIS_TOKEN and ALCHERIS_URL in the environment
+built = json.load(open("dist/<slug>/definition.json", encoding="utf-8"))
+print(asyncio.run(blocks.update_block(lesson_id=..., page_index=..., block_id=..., content=built, raw=True)))
+```
+
+Read the token from the user's MCP config without printing it. Then verify as above.
 
 ## Failure modes seen
 

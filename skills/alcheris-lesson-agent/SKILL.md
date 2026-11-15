@@ -64,7 +64,7 @@ The Alcheris MCP server (`alcheris-mcp`, also exposed as the claude.ai Alcheris 
 - **Edit in place:** `update_lesson` (title, description, publish), `update_page` (title, `layout`, `right_panel_mode`), `update_block` (merges content; `raw: true` replaces it exactly).
 - **Restructure without losing content:** `move_block` (within a page, across panels, or to another page; the block keeps its id and content), `reorder_blocks` (the full order of one page's panels), and `save_lesson_structure` (one atomic write of every page and block: places existing blocks by id, adds new ones, deletes the ones you list).
 - **Delete:** `delete_block`, `delete_page`, `delete_lesson`. Only with clear user intent.
-- **Media and artifacts:** `image_search`, `video_search`, `youtube_search`; `list_artifacts`, `save_artifact`, `duplicate_artifact`.
+- **Media and artifacts:** `image_search`, `video_search`, `youtube_search`; `upload_asset` (put your own image, video, audio or PDF in the teacher's asset library and get its URL), `list_assets` (reuse what is already there); `list_artifacts`, `save_artifact`, `duplicate_artifact`. `upload_asset` takes a local `file_path` on a local (stdio) MCP connection; through the hosted connector it takes `content_base64` for files up to about 2.5 MB. Larger files go through the app at `/teacher/assets`. There is no upload from URL.
 
 Rules:
 
@@ -167,6 +167,8 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
    - Each practice page should ideally complete a mini encounter -> explore -> understand -> apply/practice cycle, or the lesson should move through those stages across pages. Do not open a page with a wall of text; open with a hook, stimulus, exploratory interaction, or notice prompt.
    - Adapt the spine to the subject: charts, coding, math, design, language, science, product training, exam prep, or professional skills may emphasize different stages.
    - Make the structure visible to the learner. Page titles should read like steps in a lesson, not miscellaneous notes.
+   - One lesson per distinct task type. When a source covers several task types or topics that a learner studies separately (for example IELTS process diagrams and maps), build one lesson for each, unless the user asks for a single lesson. An all-in-one lesson buries each skill and is hard to reuse.
+   - Plan the visuals and the game with the pages, not after them: for each page, note which explanation becomes a visual (step 5, "Visuals over text") and which page holds the lesson's game.
 
 3. Use panels deliberately (teaching/exploration LEFT, practice RIGHT).
    - Left panel = encounter + explore + understand: the hook, source material, exploratory interaction, explanation, models, worked examples, visuals/charts, language bank, hints, and self-check notes. An `interaction` graph/distribution/equation is almost always exploratory explanation, not an exercise, so put it on the left unless the user explicitly asks otherwise.
@@ -196,12 +198,27 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
    - Read `references/alcheris-block-inventory.md` before selecting blocks for a new lesson or major revision.
    - Every lesson needs at least one active learning block: quiz, cloze, sequence, flashcard, essay, branching_scenario, custom_activity, artifact, coding, data-lab, interaction, checkpoint, etc.
    - Interactive-first is mandatory when it fits: when the source has movement, parameters, a before/after state, hotspots/parts to inspect, or a process, reach for an exploratory interactive block instead of a static equivalent. Read `references/alcheris-interactive-blocks.md`. In particular: data over time -> `interaction` mode `graph` (slider reveal), not a static chart image; spread/parameter concept -> `interaction` mode `distribution` or `equation`; a process/transformation -> `illustration` staged scenes, not a bullet list; a before/after change -> `comparison`, not two stacked blocks; a step-by-step diagram -> `canvas` replay; hotspots/parts in an image -> image hotspots when available. Apply reveal-before-explain and manipulate-before-tell. Use one interactive block per teaching point; do not decorate.
+   - **Visuals over text.** Avoid walls of text. When an explanation has a shape, show the shape: a structure or a set of parts becomes a labelled diagram, a decision becomes a flowchart, a sequence becomes a timeline or staged steps, a comparison becomes a side-by-side. Keep a short text line beside the visual for the rule; the visual carries the explanation.
+   - **Video or artifact for anything that moves.** Start from an artifact; use a video only when the voice is the content.
+     - Artifact when the learner should predict, choose, or try before seeing the answer; when they will want to set the pace (step back, replay one step); when the explanation branches ("if a road splits the map..."); or when the text must stay sharp, follow dark mode, or be edited later without re-rendering.
+     - Video when hearing a person is the point (pronunciation, tone, a teacher talking through a worked example), or for a short watch-once demo with nothing to decide. Keep it under about 30 seconds, put the key words on screen (many phones play muted), and follow it with a practice block that uses what it showed.
+     - A still diagram is enough when nothing needs to move.
+     - How to make, voice, upload, and place original diagrams and clips: `references/alcheris-explainer-media.md`.
+   - **Original material only.** Visuals, data, charts, maps, essays, and prompts are invented (fictional places, made-up figures). Never copy exam papers, published charts, or textbook images, even as a "sample".
+   - **A game in every lesson.** Each lesson has at least one game-like artifact where the learner plays with the content, usually as the practice for the lesson's central skill. A game must pass this bar:
+     - Visual first: the learner sees the thing (the factory line, the map, the clip), not a list of sentences.
+     - Obvious in about 3 seconds: one instruction line and a visible thing to tap or drag. If you need a paragraph to explain the rules, redesign it.
+     - The action is on the visual: place the stage on the line, tap the change on the map, build the town, describe what just played. Picking a word for a gap is not a game, however it is skinned; a reskinned cloze or multiple choice was rejected.
+     - Wrong moves give a clue about why, never only "try again".
+     - It ends with something the learner made or a summary they can reuse.
+     - Shipped patterns to borrow: **run the factory** (order the stages of a visual production line, find the branch), **watch and describe** (watch a short animated stage, then build the sentence for what happened), **be the town planner** (make the changes to a map yourself, then describe them with the right verb), **spot the change** (toggle two maps, tap every change, then name it).
+     - Build it with the `alcheris-artifact-builder` skill.
    - Data or chart lessons need an image/chart/table stimulus, not only text. A live `interaction` graph counts as the stimulus and is preferred over a static image when the data moves over time.
    - Domain-specific source stages must be preserved. Do not skip recognition, transformation, worked analysis, setup vocabulary, rules, safety notes, or examples when the source material teaches them.
    - Learner explanations and model answers should be visible as text or callout blocks; use accordion only for optional reveal/check content.
    - Practice blocks must contain enough content to render visibly.
    - Flashcards must teach real vocabulary, concepts, or recall prompts. Do not use labels like "Overview question 1" as the card front unless the back makes the learning value obvious.
-   - Add images to quiz questions and flashcards when a visual aids recognition or recall: chart/diagram/map questions, and vocabulary/object/place flashcards. Quiz question `image` and flashcard card `image` (plus `imagePosition`, 0-100) take a URL - reuse an existing lesson image URL or an uploaded asset. If a helpful image would need a picture you do not have a URL for, flag it in a brief callout rather than silently leaving the visual out. (Autonomous image search/generation is a planned feature; until it ships, only reuse or flag.)
+   - Add images to quiz questions and flashcards when a visual aids recognition or recall: chart/diagram/map questions, and vocabulary/object/place flashcards. Quiz question `image` and flashcard card `image` (plus `imagePosition`, 0-100) take a URL - reuse an existing lesson image URL or an uploaded asset. If you need a picture you do not have, find one with `image_search`, or make an original one and upload it with `upload_asset` (see `references/alcheris-explainer-media.md`). If neither is possible, tell the user in chat; never leave a placeholder in the lesson.
    - Vary the practice; do not make every exercise multiple choice. Within a quiz use `short_answer`, `multiple_select`, and `cloze` (fill-the-gap) question types, and reach for standalone `sequence` (ordering), `cloze` (precise wording), `flashcard` (recall), and `comparison` (weak-vs-strong) blocks. Match the type to the skill, not to habit.
    - Vary the correct-answer position in multiple choice. NEVER leave the correct option in position A (`correctAnswerIndex: 0`) by default. Order options naturally (not answer-first) and distribute the correct answer across A/B/C/D roughly evenly across the lesson. A lesson where every correct answer is A is broken - shuffle each question's options and set `correctAnswerIndex` to wherever the correct option actually lands.
    - Do not duplicate practice across pages. Each page's exercises must be distinct in content AND type. Do not repeat the same question, reuse the same block type with the same material, or give two pages an identical practice structure (e.g. both pages = cloze + essay + quiz). Give each page a different mix.
@@ -244,6 +261,8 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
    - Treat API `pages[].blocks` as canonical on readback; split into panels by `block.panel`.
    - Check that each block has non-empty renderer-required content.
    - Open `/learn/{lesson_id}` or editor preview and verify visible content, media, and no empty-panel messages.
+   - In guided flow the player reveals blocks one at a time. Step through each page with the reveal control (`>`, "Next step") before concluding that a block is missing.
+   - Play every video in the player: it loads, it is not muted, and its sound plays. Open every artifact and confirm it loads without "Activity unavailable".
    - Mentally run beat generation: does each right-panel activity land with the explanation it practices? Would the mobile path read cleanly?
    - Run `scripts/validate_alcheris_lesson.py` when backend credentials are available.
 
@@ -294,6 +313,11 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
 - Revisions of a teacher's lesson went into a copy unless the user said otherwise, and the user has both lesson ids.
 - Restructures used `move_block` / `reorder_blocks` / `save_lesson_structure` (with `raw: true` for copied content), not delete-and-re-add, so formatting and block ids survived.
 - Any `artifact` was built and checked with the `alcheris-artifact-builder` skill (fits desktop, editor, and phone frames; validator passes).
+- The lesson has at least one game that passes the bar in step 5: visual first, obvious in about 3 seconds, the action is on the visual, wrong moves give a clue. No reskinned cloze or multiple choice counts as the game.
+- No page explains a structure, decision, sequence, or comparison as a wall of text when a visual would show it.
+- Each moving explainer went through the video-or-artifact decision: videos are used only where the voice is the content, stay under about 30 seconds, show the key words on screen, and are followed by practice.
+- All visuals, data, maps, and model texts are original; nothing is copied from exam papers or published materials.
+- A source with several distinct task types was split into one lesson per type, unless the user asked for one lesson.
 - The student/player route has been checked or the inability to check is reported.
 
 ## References
@@ -303,6 +327,8 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
 - Read `references/alcheris-interactive-blocks.md` when the source has movement, parameters, a before/after state, or a process, and to author interaction/illustration/comparison/canvas/mindmap content correctly.
 - Read `references/alcheris-learning-beats.md` when structuring a lesson so it collapses into a clean mobile path.
 - Read `references/alcheris-teacher-personas.md` before writing any learner-facing text; write the whole lesson in the declared persona.
+- Read `references/alcheris-explainer-media.md` before making a diagram, narrated clip, or other original media, and before choosing between a video and an artifact.
+- Read `references/alcheris-teaching-depth-and-tool-practice.md` when the learner must reason through a procedure or learn a real named tool (calculator, application, device).
 - `data/block-contracts.json` is the machine-readable source of truth for interactive-block schemas, mobile behavior, and beats. The human references above and the native in-app agent prompt both derive from it; keep them in sync with it.
 - Use `scripts/validate_alcheris_lesson.py` to audit a saved lesson from the backend.
 - Use the sibling skill `skills/alcheris-artifact-builder` to build, size, validate, and upload any `artifact` block.

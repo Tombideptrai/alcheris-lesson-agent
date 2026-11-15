@@ -61,6 +61,8 @@ So:
 - **Draw in SVG with a `viewBox`** and `preserveAspectRatio="xMidYMid meet"`, so the drawing scales as one piece. Keep SVG text at 10–12px at scale 1, so it stays readable at 0.8.
 - **Let the drawing fill its stage (optional).** When the cap applies, the stage is shorter than the drawing's natural aspect ratio, and a fixed `viewBox` gets letterboxed. The starter's `fitDrawing: true` sets the `viewBox` height from the stage's real shape and redraws on resize, keeping the current step and replaying no animation. Lay the scene out from `VIEW.h`. With it on, don't set `--ratio` from JS, because the stage drives the drawing and not the other way round.
 - **No internal scrolling.** `overflow: auto` or `overflow: scroll` anywhere in HTML or CSS is rejected by the validator. Split the content instead.
+- **Budget the height of every step on phones.** At 320 px wide the 9:16 frame is about 569 px tall. Keep every step at or under about 530 px, measured on the tallest state (all feedback shown, all chips wrapped). What usually overflows: a footer row whose buttons don't shrink (use `grid-template-columns: auto minmax(0,1fr) auto` and short labels), a full-size drawing on a step where the learner only reads (shrink it with a `small` class, or drop it), and a summary step that repeats the drawing above a list. Check each step at 320 px with `frame_check.html`, not just the first one.
+- **Grids and flex children need `minmax(0, 1fr)` / `min-width: 0`.** Otherwise one long word or a wide SVG pushes the frame wider than the phone.
 
 ## Design notes that came from real feedback
 
@@ -70,10 +72,35 @@ So:
 - **Write the Next label as the action** ("Draw the axes →", "Connect the dots →"). On the last step, offer the next tab or a replay, and call `complete` once every tab is done.
 - **Keep the package small**: well under the 200 KB limit. The graph-skins files are about 22 KB each.
 
+## Games
+
+The lesson-agent skill asks for a game in every lesson. Founder feedback set the bar; two early builds were rejected ("I don't know how to play it", "no different from cloze").
+
+- **Visual first.** The learner looks at the thing being taught: a production line, a map, a short animated stage. A list of sentences with gaps is not a game.
+- **Obvious in about 3 seconds.** One instruction line in the header and a visible thing to tap or drag. Highlight the first target (pulse, dashed ring) so the first move is guessable. If the rules need a paragraph, redesign.
+- **The action happens on the visual.** Tap the stage that comes next, tap the change on the map, place the building, then describe it. Choosing a word for a gap, however it is dressed up, is a cloze.
+- **Every wrong move teaches.** Give each wrong choice its own clue about why ("Relocate means move. The courts didn't move."). After about three misses, offer "Show me" so nobody is trapped.
+- **Make, then say.** The strongest pattern is act on the visual first, then build the sentence for what you did, so the language is tied to a picture the learner made.
+- **End with something reusable.** A final step that collects the learner's sentences or decisions into a short summary, then calls `complete`.
+
+Patterns that shipped:
+
+| Game | Learner does | Then |
+|---|---|---|
+| Run the factory | Orders the stages of an animated production line; finds where a side branch leaves it | Picks process type and builds the overall |
+| Watch and describe | Watches one stage animate | Builds the sentence for it from chunks (material, tool, how) |
+| Be the town planner | Makes the changes to a map (build, demolish, relocate) | Names each change with the right verb and tense |
+| Spot the change | Toggles two maps and taps every change | Names each change and says where it is |
+
+### A family of games in one build
+
+When a lesson set needs several games, keep one folder with one engine per game type (`factory.js`, `planner.js`, ...), one content file per engine, one shared `styles.css` split into sections marked `/* ===== name ===== */`, and one `build.mjs` that writes `dist/<slug>/definition.json` for each game with only the shared CSS plus its own section. Content changes then never touch engine code, and every game is validated in one run.
+
 ## Before you finish
 
 - [ ] `validate_artifact.py` passes, with no errors and any warnings understood.
-- [ ] `frame_check.html`: fits at 320, 343, and 620 wide in 9:16, the adaptive frame settles and doesn't grow, and the phone scale is about 0.8 or more on every step of every tab.
+- [ ] `frame_check.html`: fits at 320, 343, and 620 wide in 9:16, the adaptive frame settles and doesn't grow, and the phone scale is about 0.8 or more on every step of every tab. Every step is at or under about 530 px tall at 320 px wide.
+- [ ] If it is the lesson's game: visual first, obvious in about 3 seconds, the action is on the visual, every wrong move gives a clue, and it is not a reskinned cloze.
 - [ ] Dark mode and a non-default primary colour both look right, and series colours stay distinct.
 - [ ] `complete` (or `submit`) is reachable, so guided flow can't get stuck.
 - [ ] The uploaded content is byte-identical to the built `definition.json`, checked by re-reading the lesson.
