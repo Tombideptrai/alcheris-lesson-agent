@@ -13,6 +13,7 @@ Use the bundled pieces instead of starting from a blank file:
 |---|---|
 | `assets/starter/` | Working stepper template: `index.html`, `styles.css`, `engine.js`, `config.mjs`, `build.mjs`. Builds a valid definition out of the box, with tabs, an optional check step, dark-mode series colours and an opt-in `fitDrawing`. |
 | `assets/examples/graph-skins/` | A real shipped example: one engine, two configs (table/bars/pies to line graph; table/pie to bar chart). |
+| `assets/snippets/` | Drop-in helpers from the CFA rebuild: `motion.js` (tweens, scene framework, window-tracked drag), `auto.js` (auto-advance with a countdown on Next), `report.js` (reports the artifact's height to the host). |
 | `scripts/validate_artifact.py` | Checks a `definition.json` against the host contract and the sizing rules before you upload. |
 | `scripts/frame_check.html` | Test page that loads a built artifact in the real frame sizes (desktop, phone, adaptive) and reports whether it fits. |
 | `references/frame-and-sizing.md` | How the host sizes frames, with the numbers. Read when layout misbehaves. |
@@ -72,6 +73,55 @@ So:
 - **Write the Next label as the action** ("Draw the axes →", "Connect the dots →"). On the last step, offer the next tab or a replay, and call `complete` once every tab is done.
 - **Keep the package small**: well under the 200 KB limit. The graph-skins files are about 22 KB each.
 
+## Motion, not click-through
+
+Founder feedback on the CFA rebuild: "I need animation, don't just turn it into a click-a-button simulator. The artifacts so far are rather static, sometimes unfun." A stepper whose only action is choosing a chip and pressing Next is a quiz in a frame.
+
+- **Something moves on every step.** Money travels along the timeline, coins drop in, a staircase morphs into a curve, a bar fills, a vault counts up. Animate the change itself (tween positions, morph paths, count numbers), not just a fade between screens.
+- **The main action is direct manipulation.** Drag the money to year 1, drag a guess line, drag the price and watch the yield solve, scrub a playhead through 13 years, slide a parameter and watch the picture respond. Chip answers are fine as a quick check, never as the core mechanic.
+- **Guess first, then reveal.** Let the learner commit a prediction on the visual (drag a dashed bar to their guess), then animate the real result next to it and compare.
+- **Small motions make it feel alive:** pop-in for new elements, a slide when something moves, a shake on a wrong tap, a pulse on a right one, a breathing ring on the first thing to grab.
+- **Freeze animations from a step you left.** Bump a generation counter on every step change and have tweens stop when it changes, or an old animation keeps moving things in the new step. `assets/snippets/motion.js` does this.
+- Honour `prefers-reduced-motion`: jump to the end state.
+
+## Teach before you test
+
+Founder feedback: "I don't know what PMT is, but it is already asking me to find PMT." The definition was a small subtitle above the question, and that doesn't count.
+
+- **A new term gets its own teaching beat with no question:** a big definition card (the term, plain-language meaning, where it sits in this example), and an animation that shows it (the `PMT` tag flies onto each $60 coin).
+- **Then test it on a new example** (a savings plan after the bond), not by tapping the thing you just highlighted.
+- When a question follows a card in the same step, fade the question in after a beat (about 1 s) so the card is read first.
+
+## Auto-advance
+
+Founder feedback: "I want automatic progress. I don't want to click on year 2."
+
+- After a step is **freshly** completed (a right answer, a finished drag, a teaching beat whose animation has played), move to the next step on its own after enough time to read the feedback: about 1.8 to 5 s, scaled by word count.
+- Show the wait: the Next button fills like a progress bar, and tapping it skips ahead.
+- Never auto-advance after a wrong answer, on the last step, or when the learner goes Back to a step they already finished.
+- `assets/snippets/auto.js` implements this (`autoNext(go, text)`, `cancelAuto()` on every step change).
+
+## Touch-proof drags
+
+A drag that only listens on the element it started on breaks on phones: the finger leaves a small SVG shape (and iOS can drop pointer capture), so the release is lost and the step stays locked. That's what made a learner think the year-2 guess had to be exactly $121.
+
+- On `pointerdown`, listen for `pointermove`, `pointerup` and `pointercancel` on **`window`** until the finger lifts. Don't rely on element-level move/up or on `setPointerCapture`.
+- Make targets generous: an invisible hit area much bigger than the visible handle, or let a tap anywhere in the column set the value.
+- Count a guess as soon as it **moves**, not only on release.
+- Set `touch-action: none` on the drawing.
+
+## Report your own height
+
+The host sizes adaptive frames from a ResizeObserver, which can stay silent when the block is revealed late or the tab is in the background, leaving the frame at the 9:16 default (for example 1,363 px tall on desktop). Also call `window.AlcherisArtifact?.resize(height)` yourself whenever the content changes. `assets/snippets/report.js` does it with a MutationObserver plus a few retries.
+
+## Testing gotchas
+
+- **A hidden or background preview tab runs no `requestAnimationFrame`, no ResizeObserver and no CSS animations.** Tweens never finish and screenshots freeze on the first frame. To test the logic, swap in a timer: `window.requestAnimationFrame = cb => setTimeout(() => cb(performance.now()), 16)`. To screenshot the end state, inject `*{animation:none!important;transition:none!important}`.
+- Attach drag handlers before any opening animation awaits, or a stalled animation leaves the step dead.
+- Test drags by releasing **away** from the target, and on a real phone when you can.
+- A simple static server can serve a cached `script.js` after a rebuild. Fetch it with `{cache: "reload"}` before reloading.
+- Script every step: fire the wrong answers and the right one, measure the height at the tallest state, and confirm Next unlocks and `complete` fires.
+
 ## Games
 
 The lesson-agent skill asks for a game in every lesson. Founder feedback set the bar; two early builds were rejected ("I don't know how to play it", "no different from cloze").
@@ -103,4 +153,9 @@ When a lesson set needs several games, keep one folder with one engine per game 
 - [ ] If it is the lesson's game: visual first, obvious in about 3 seconds, the action is on the visual, every wrong move gives a clue, and it is not a reskinned cloze.
 - [ ] Dark mode and a non-default primary colour both look right, and series colours stay distinct.
 - [ ] `complete` (or `submit`) is reachable, so guided flow can't get stuck.
+- [ ] Something moves on every step, and the main action is direct manipulation, not chip-and-Next.
+- [ ] Every new term is taught (big card + animation) before any question about it, and checked on a new example.
+- [ ] Steps auto-advance after a fresh success (countdown on Next, skippable, not on Back or wrong answers).
+- [ ] Drags track the window and survive a release away from the target; a guess counts on first move.
+- [ ] The artifact reports its own height (`AlcherisArtifact.resize`), and in the player the frame settles at the content height.
 - [ ] The uploaded content is byte-identical to the built `definition.json`, checked by re-reading the lesson.

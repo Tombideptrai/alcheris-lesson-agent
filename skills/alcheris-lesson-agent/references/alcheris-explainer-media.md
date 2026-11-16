@@ -50,6 +50,7 @@ A pipeline that works without paid services:
 3. **Animate from the timings.** Build the clip in Remotion (or another code-to-video tool) at 1280×720, 30 fps. Time every scene from `lines.json`, so a re-voiced line moves its animation automatically, and never hard-code frame numbers.
 4. **Render silent, then mix.** Delay each WAV to its start time, mix them, pad to the clip length, and normalise loudness to about -16 LUFS (ffmpeg `adelay`, `amix`, `loudnorm`).
 5. **Mux for the web.** H.264 video, **stereo** AAC audio at about 160 kbps, `+faststart`. Mono audio plays from one speaker on some setups and reads as "no sound".
+   For iPhone Safari, encode H.264 **Constrained Baseline** (level 3.1), `yuv420p`, limited range, 48 kHz audio: `ffmpeg -i in.mp4 -c:v libx264 -profile:v baseline -level 3.1 -pix_fmt yuv420p -color_range tv -c:a aac -ac 2 -ar 48000 -b:a 160k -movflags +faststart out.mp4`. A High-profile full-range file played on desktop but not on an iPhone.
 6. **Check before uploading.** Watch it at phone size, confirm no label overlaps or overflows, and measure the loudness again.
 
 Keep the voice, timing, and render scripts in the project so a clip can be fixed and re-rendered later.

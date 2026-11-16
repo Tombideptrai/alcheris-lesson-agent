@@ -142,6 +142,7 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
 - Use split pages whenever that page has practice: encounter/explore/understand content goes on the LEFT, practice/check/application/production goes in the RIGHT (floating) panel. Use single pages only when there is no learner practice on that page.
 - Do not put questions on the lesson introduction page unless the user explicitly asks for a diagnostic opener.
 - Teach the rule before asking students to answer questions about it.
+- **Teach before you test, visibly.** Every new term (PMT, yield, nominal, principal...) gets a prominent teaching moment before any question uses it: a definition card or a short visual beat, not a subtitle above the question. Check it afterwards on a new example, not on the thing you just highlighted. This includes quizzes on earlier pages: a term may not appear in a question before the page that teaches it.
 - Transformation must be taught mechanically when source material requires it: x-axis = time, y-axis = value/unit, each repeated category = one line, each bar/cell/slice value = one plotted point, connect points, then read movement.
 
 ## Workflow
@@ -169,6 +170,7 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
    - Make the structure visible to the learner. Page titles should read like steps in a lesson, not miscellaneous notes.
    - One lesson per distinct task type. When a source covers several task types or topics that a learner studies separately (for example IELTS process diagrams and maps), build one lesson for each, unless the user asks for a single lesson. An all-in-one lesson buries each skill and is hard to reuse.
    - Plan the visuals and the game with the pages, not after them: for each page, note which explanation becomes a visual (step 5, "Visuals over text") and which page holds the lesson's game.
+   - **Decide each visual's format with the creator before building.** List every visual with a recommended format (still image / artifact / video) and a one-line reason, and confirm. Default: still image when nothing moves, artifact when the learner should predict, try or set the pace, video only when a voice talking it through is the point.
 
 3. Use panels deliberately (teaching/exploration LEFT, practice RIGHT).
    - Left panel = encounter + explore + understand: the hook, source material, exploratory interaction, explanation, models, worked examples, visuals/charts, language bank, hints, and self-check notes. An `interaction` graph/distribution/equation is almost always exploratory explanation, not an exercise, so put it on the left unless the user explicitly asks otherwise.
@@ -198,13 +200,15 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
    - Read `references/alcheris-block-inventory.md` before selecting blocks for a new lesson or major revision.
    - Every lesson needs at least one active learning block: quiz, cloze, sequence, flashcard, essay, branching_scenario, custom_activity, artifact, coding, data-lab, interaction, checkpoint, etc.
    - Interactive-first is mandatory when it fits: when the source has movement, parameters, a before/after state, hotspots/parts to inspect, or a process, reach for an exploratory interactive block instead of a static equivalent. Read `references/alcheris-interactive-blocks.md`. In particular: data over time -> `interaction` mode `graph` (slider reveal), not a static chart image; spread/parameter concept -> `interaction` mode `distribution` or `equation`; a process/transformation -> `illustration` staged scenes, not a bullet list; a before/after change -> `comparison`, not two stacked blocks; a step-by-step diagram -> `canvas` replay; hotspots/parts in an image -> image hotspots when available. Apply reveal-before-explain and manipulate-before-tell. Use one interactive block per teaching point; do not decorate.
+   - **Short text.** One or two short lines per teaching point, next to its visual. Put derivations, exact key sequences and longer worked examples in "show the working" accordions. As a guide, a page's teaching side carries about 30 to 70 words of running text, not hundreds; the CFA rebuild went from 2,000 to about 500 words across 13 pages and read better.
    - **Visuals over text.** Avoid walls of text. When an explanation has a shape, show the shape: a structure or a set of parts becomes a labelled diagram, a decision becomes a flowchart, a sequence becomes a timeline or staged steps, a comparison becomes a side-by-side. Keep a short text line beside the visual for the rule; the visual carries the explanation.
    - **Video or artifact for anything that moves.** Start from an artifact; use a video only when the voice is the content.
      - Artifact when the learner should predict, choose, or try before seeing the answer; when they will want to set the pace (step back, replay one step); when the explanation branches ("if a road splits the map..."); or when the text must stay sharp, follow dark mode, or be edited later without re-rendering.
      - Video when hearing a person is the point (pronunciation, tone, a teacher talking through a worked example), or for a short watch-once demo with nothing to decide. Keep it under about 30 seconds, put the key words on screen (many phones play muted), and follow it with a practice block that uses what it showed.
      - A still diagram is enough when nothing needs to move.
-     - How to make, voice, upload, and place original diagrams and clips: `references/alcheris-explainer-media.md`.
+     - How to make, voice, upload, and place original diagrams and clips: `references/alcheris-explainer-media.md`. Example of a good video: a 28-second voiced proof ("why a perpetuity has a finite price"), where the reasoning is spoken and the equations build on screen.
    - **Original material only.** Visuals, data, charts, maps, essays, and prompts are invented (fictional places, made-up figures). Never copy exam papers, published charts, or textbook images, even as a "sample".
+   - **Artifacts move.** An artifact whose only action is choosing a chip and pressing Next was rejected as "a click-a-button simulator". Every artifact animates the change it teaches and centres on direct manipulation (drag, slide, scrub, guess on the visual), auto-advances after a fresh success, and tracks drags on the whole window so phones never lose a release. The `alcheris-artifact-builder` skill has the rules and drop-in snippets.
    - **A game in every lesson.** Each lesson has at least one game-like artifact where the learner plays with the content, usually as the practice for the lesson's central skill. A game must pass this bar:
      - Visual first: the learner sees the thing (the factory line, the map, the clip), not a list of sentences.
      - Obvious in about 3 seconds: one instruction line and a visible thing to tap or drag. If you need a paragraph to explain the rules, redesign it.
@@ -318,6 +322,10 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
 - Each moving explainer went through the video-or-artifact decision: videos are used only where the voice is the content, stay under about 30 seconds, show the key words on screen, and are followed by practice.
 - All visuals, data, maps, and model texts are original; nothing is copied from exam papers or published materials.
 - A source with several distinct task types was split into one lesson per type, unless the user asked for one lesson.
+- Each visual's format (still / artifact / video) was proposed with a reason and confirmed with the creator.
+- No term is used in any block, including quizzes on earlier pages, before a prominent teaching moment for it; terms are checked on a new example.
+- Teaching text is short (about 30 to 70 words of running text per page); derivations live in accordions.
+- Every artifact animates its change, centres on direct manipulation, auto-advances after a fresh success, and survives a drag released away from its target.
 - The student/player route has been checked or the inability to check is reported.
 
 ## References
