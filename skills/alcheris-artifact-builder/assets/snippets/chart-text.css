@@ -1,0 +1,14 @@
+/* Chart text that stays readable. Rename the classes to the ones your engine uses.
+   1. Labels that sit on a line, bar or axis get a halo in the board colour, so the line
+      never cuts through the words. */
+.tl .ylab, .tl .tlabel, .tl .pv-val, .tl .seg-lab, .tl .face-label, .tl .price-tag {
+  paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round;
+}
+/* 2. Phones. A chart drawn in a 360-wide viewBox lands in a frame about 300px wide, so a
+      10px label renders near 8px. Raise free-standing labels to 13 (about 11px on screen).
+      Text inside a coin, pill or slot goes up only as far as its shape allows (11 to 11.5);
+      leave anything that would spill out at its normal size, and check every scene. */
+@media (max-width: 480px) {
+  .tl .tlabel, .tl .ylab, .tl .note, .tl .seg-lab, .tl .face-label { font-size: 13px; }
+  .tl .coin text, .tl .tag text, .tl .step text { font-size: 11.5px; }
+}

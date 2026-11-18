@@ -13,8 +13,9 @@ Use the bundled pieces instead of starting from a blank file:
 |---|---|
 | `assets/starter/` | Working stepper template: `index.html`, `styles.css`, `engine.js`, `config.mjs`, `build.mjs`. Builds a valid definition out of the box, with tabs, an optional check step, dark-mode series colours and an opt-in `fitDrawing`. |
 | `assets/examples/graph-skins/` | A real shipped example: one engine, two configs (table/bars/pies to line graph; table/pie to bar chart). |
-| `assets/snippets/` | Drop-in helpers from the CFA rebuild: `motion.js` (tweens, scene framework, window-tracked drag), `auto.js` (auto-advance with a countdown on Next), `report.js` (reports the artifact's height to the host). |
+| `assets/snippets/` | Drop-in helpers from the CFA rebuild: `motion.js` (tweens, scene framework, window-tracked drag), `auto.js` (auto-advance with a countdown on Next), `report.js` (reports the artifact's height to the host), `chart-text.css` (label halos and bigger chart text on phones). |
 | `scripts/validate_artifact.py` | Checks a `definition.json` against the host contract and the sizing rules before you upload. |
+| `scripts/shoot_scenes.py` | Screenshots every scene of built artifacts at phone and laptop width with headless Chrome, one contact sheet per artifact. |
 | `scripts/frame_check.html` | Test page that loads a built artifact in the real frame sizes (desktop, phone, adaptive) and reports whether it fits. |
 | `references/frame-and-sizing.md` | How the host sizes frames, with the numbers. Read when layout misbehaves. |
 | `references/contract.md` | Every definition field and validator rule. Read when a save is rejected. |
@@ -37,6 +38,7 @@ Use the bundled pieces instead of starting from a blank file:
 7. **Validate, then check the frame.**
    - `python scripts/validate_artifact.py dist/<slug>/definition.json` must pass.
    - Serve the project folder and open `scripts/frame_check.html?src=/dist/<slug>/index.html` (copy it next to `dist/` or serve a common parent). It reports, for each frame size, whether the tallest step fits and how much the drawing is scaled down. Aim for a scale of 0.8 or more on phones, and step through every tab.
+   - `python scripts/shoot_scenes.py dist` screenshots every scene at phone and laptop width, and look at every sheet (see "Look at every scene").
 
 8. **Upload and verify.** Follow `references/upload-and-verify.md`. In short: send the whole definition with `raw: true`, re-read the lesson, and compare the stored content with your built `definition.json`. When asked to work on a teacher's lesson, write to a copy unless they say otherwise.
 
@@ -59,7 +61,7 @@ So:
   ```
   Here 290px is everything that isn't the drawing: tabs, header, footer, gaps, padding. Measure your own chrome and adjust. If the drawing's aspect ratio changes per step (for example a cropped `viewBox`), set `--ratio` from JS.
 - **Compact the chrome on phones.** Phones get the 9:16 frame at about 320–360px wide, so every pixel of tabs and header comes out of the drawing. Under `@media (max-width: 420px)`, shrink tabs and buttons, drop reserved header heights, and use a smaller cap reserve (for example 215px). In graph-skins this took the chart from 63–72% scale to 80–89%.
-- **Draw in SVG with a `viewBox`** and `preserveAspectRatio="xMidYMid meet"`, so the drawing scales as one piece. Keep SVG text at 10–12px at scale 1, so it stays readable at 0.8.
+- **Draw in SVG with a `viewBox`** and `preserveAspectRatio="xMidYMid meet"`, so the drawing scales as one piece. A 360-wide `viewBox` lands in a frame about 300 px wide on phones, so 10 px labels render near 8 px. Draw labels at 10–12 at scale 1, and under `@media (max-width: 480px)` raise free-standing labels to about 13 and text inside shapes as far as the shape allows (`assets/snippets/chart-text.css`).
 - **Let the drawing fill its stage (optional).** When the cap applies, the stage is shorter than the drawing's natural aspect ratio, and a fixed `viewBox` gets letterboxed. The starter's `fitDrawing: true` sets the `viewBox` height from the stage's real shape and redraws on resize, keeping the current step and replaying no animation. Lay the scene out from `VIEW.h`. With it on, don't set `--ratio` from JS, because the stage drives the drawing and not the other way round.
 - **No internal scrolling.** `overflow: auto` or `overflow: scroll` anywhere in HTML or CSS is rejected by the validator. Split the content instead.
 - **Budget the height of every step on phones.** At 320 px wide the 9:16 frame is about 569 px tall. Keep every step at or under about 530 px, measured on the tallest state (all feedback shown, all chips wrapped). What usually overflows: a footer row whose buttons don't shrink (use `grid-template-columns: auto minmax(0,1fr) auto` and short labels), a full-size drawing on a step where the learner only reads (shrink it with a `small` class, or drop it), and a summary step that repeats the drawing above a list. Check each step at 320 px with `frame_check.html`, not just the first one.
@@ -71,6 +73,7 @@ So:
 - **Make every step change something visible**, and mirror it in the step copy. Reveal with motion (draw axes, pop dots, draw lines, fade or raise bars), and honour `prefers-reduced-motion`.
 - **End with the learner doing something, not just watching.** Before the explanation step, add a check: "Where does the cyclist speed up?" or "Which bar is tallest?". The starter supports `check: { prompt, options, answer, hints, explain }` on any step. Next stays locked until the right answer or "Show me", wrong picks get their own hint, and answers are tracked. It draws as an overlay inside the stage, so it never changes the artifact's height. For questions that are better answered on the drawing itself (tap the dot, drag the point), make the SVG elements focusable buttons and reuse the same lock, hint and track pattern.
 - **Write the Next label as the action** ("Draw the axes →", "Connect the dots →"). On the last step, offer the next tab or a replay, and call `complete` once every tab is done.
+- **No thick coloured stripe down one side of a card.** It is the most recognisable tell of AI-made UI. A definition card gets a soft muted background, and the big term in the primary colour carries the accent.
 - **Keep the package small**: well under the 200 KB limit. The graph-skins files are about 22 KB each.
 
 ## Motion, not click-through
@@ -114,13 +117,29 @@ A drag that only listens on the element it started on breaks on phones: the fing
 
 The host sizes adaptive frames from a ResizeObserver, which can stay silent when the block is revealed late or the tab is in the background, leaving the frame at the 9:16 default (for example 1,363 px tall on desktop). Also call `window.AlcherisArtifact?.resize(height)` yourself whenever the content changes. `assets/snippets/report.js` does it with a MutationObserver plus a few retries.
 
+The guided player can also create a split page's artifact frame at 0 px wide and widen it when the block is revealed, without a resize event reaching the frame. At 0 px the content measures far too tall (622 px content reported as 862 px in the CFA lessons), and the frame stays that tall. `report.js` polls the frame width every 500 ms and re-reports when it changes.
+
 ## Testing gotchas
 
-- **A hidden or background preview tab runs no `requestAnimationFrame`, no ResizeObserver and no CSS animations.** Tweens never finish and screenshots freeze on the first frame. To test the logic, swap in a timer: `window.requestAnimationFrame = cb => setTimeout(() => cb(performance.now()), 16)`. To screenshot the end state, inject `*{animation:none!important;transition:none!important}`.
+- **A hidden or background preview tab runs no `requestAnimationFrame`, no ResizeObserver and no CSS animations.** Tweens never finish and screenshots freeze on the first frame, or come back garbled. Use `scripts/shoot_scenes.py` (headless Chrome) for screenshots instead. To test the logic, swap in a timer: `window.requestAnimationFrame = cb => setTimeout(() => cb(performance.now()), 16)`. To screenshot the end state, inject `*{animation:none!important;transition:none!important}`.
 - Attach drag handlers before any opening animation awaits, or a stalled animation leaves the step dead.
 - Test drags by releasing **away** from the target, and on a real phone when you can.
 - A simple static server can serve a cached `script.js` after a rebuild. Fetch it with `{cache: "reload"}` before reloading.
 - Script every step: fire the wrong answers and the right one, measure the height at the tallest state, and confirm Next unlocks and `complete` fires.
+
+## Look at every scene
+
+Scripted tests miss layout. In the CFA rebuild every artifact passed its checks, yet a visual pass at 360 px found nine places where text collided. Run `python scripts/shoot_scenes.py dist` (it jumps to each scene with `window.__alcScene(k)` from `motion.js`, or a global `enter(k)`) and look at every sheet for:
+
+- **Labels on lines or bars.** An axis, grid or curve running through a price or a percentage. Give such labels a halo in the board colour (`paint-order: stroke`, see `chart-text.css`), or move them.
+- **Tags over neighbours.** A pill placed beside a stacked coin can cover the next column's coin. Put it where there is room (under the stack, on the axis), not at a fixed offset.
+- **Text wider than its shape.** "1.0300 DUB" in a 60-wide pill, "guess $1106.50" in a 92-wide tag. Size the shape for the longest value the scene can show.
+- **Values that move into other things.** A negative bar growing down into its own label or the slider knob, or a value label landing on the face line when the price goes above face. Clamp heights and give labels a fixed lane.
+- **Labels running into rulers and tick labels**, and a label sitting on the start position of a moving piece.
+- **Phone text size.** Anything under about 10 px on screen at 360 px wide.
+- **Empty or repeated scenes.** A summary scene that redraws the opening chart at its starting values says nothing.
+
+Fix, rebuild, and shoot again until every sheet is clean.
 
 ## Games
 
@@ -157,5 +176,6 @@ When a lesson set needs several games, keep one folder with one engine per game 
 - [ ] Every new term is taught (big card + animation) before any question about it, and checked on a new example.
 - [ ] Steps auto-advance after a fresh success (countdown on Next, skippable, not on Back or wrong answers).
 - [ ] Drags track the window and survive a release away from the target; a guess counts on first move.
+- [ ] `shoot_scenes.py` sheets checked for every scene: no label on a line without a halo, no text outside its shape, no tag over a neighbour, chart text about 10 px or more on screen at 360 px wide.
 - [ ] The artifact reports its own height (`AlcherisArtifact.resize`), and in the player the frame settles at the content height.
 - [ ] The uploaded content is byte-identical to the built `definition.json`, checked by re-reading the lesson.

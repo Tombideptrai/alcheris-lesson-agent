@@ -119,6 +119,8 @@ function scenes(C, runners) {
   }
   UI.next.addEventListener("click", () => { if (done.has(i) && i < runners.length - 1) enter(i + 1); });
   UI.back.addEventListener("click", () => { if (i > 0) enter(i - 1); });
+  // Test hook: jump to scene k (earlier scenes count as done). Used by scripts/shoot_scenes.py.
+  window.__alcScene = (k) => { for (let j = 0; j < k; j++) done.add(j); enter(Math.min(k, runners.length - 1)); };
   enter(0);
   return api;
 }
