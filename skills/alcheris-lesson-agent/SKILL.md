@@ -264,7 +264,7 @@ Keep the main path clean and reward the curious: put extra depth (proofs, edge c
    - Practice ladder: each taught micro-skill has enough checking/practice/production for the learner to remember the pattern. Flag/fix pages that stop at one quiz, use only multiple choice, or call a knowledge check "production."
    - Panel audit: pages with practice are split; left contains teaching/source/exploration; right contains practice/production. Exploratory interactions are not used as the main right-panel stimulus. If practice depends on a source image/chart/text, it is visible while practising.
    - Block-choice audit: if the native inventory cannot express the intended experience, use an `artifact`; if content has movement/parameters/process/before-after, use an exploratory interaction instead of static text/image.
-   - Model timing: exact model answers for learner tasks appear after the attempt, not before.
+   - Model timing: exact model answers for learner tasks appear after the attempt, not before. For essays, put the model in the essay's `modelAnswer` and a tickable checklist in `selfCheck`; the player reveals both after the learner saves.
    - Persona audit: one declared persona is used consistently and does not shorten the teaching.
    - Visual/player audit: inspect the student/player route when available, including empty panels, cramped full-panel workspaces, visible images/media, interaction rendering, guided-flow/mobile ordering, and answer gates.
 
