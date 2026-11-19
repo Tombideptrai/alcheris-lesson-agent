@@ -129,7 +129,7 @@ phones (see `references/alcheris-learning-beats.md`).
 
 - `code`: static formatted code display.
 - `snippet`: inline runnable snippet.
-- `coding`: runnable code block. With immersive content it becomes a workspace.
+- `coding`: runnable code block in Python, JavaScript or SQL. With immersive content it becomes a workspace. SQL blocks carry their own data (`sqlSetup`) and show learners a Tables panel to inspect it.
 - `data-lab`: notebook-style data exploration.
 
 ## Right-Panel Modes
