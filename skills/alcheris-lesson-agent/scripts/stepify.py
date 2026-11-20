@@ -132,6 +132,11 @@ def stepify(code: str, file: str = "/main.py") -> dict:
         expected = new_output(previous, stdout)
         if not expected.strip():
             raise StepError(f"Step {index} ({step['title']}) prints nothing new, so it can't be checked.")
+        if previous and expected.strip() in previous:
+            raise StepError(
+                f"Step {index} ({step['title']}) prints {expected.strip()[:60]!r}, which an earlier step already "
+                "printed, so it would pass before the learner writes it. Print something only this step produces."
+            )
         previous = stdout
         built.append({
             "id": f"step-{index}",
