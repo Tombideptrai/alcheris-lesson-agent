@@ -117,6 +117,10 @@ Founder feedback: "I don't know what PMT is, but it is already asking me to find
 - **Then test it on a new example** (a savings plan after the bond), not by tapping the thing you just highlighted.
 - When a question follows a card in the same step, fade the question in after a beat (about 1 s) so the card is read first.
 
+## Computation steps need a Check button
+
+If a step checks the answer on every tap of a − / + stepper or dial, a learner can step past the right number and "solve" it without computing anything (found while testing the linear algebra lessons). For anything computed (a sum, a determinant, a product), steppers only store the value and a **Check** button grades it, with a specific clue for each wrong answer. Live checking is fine only when steering is the point (drag the hats until the vector lands on the ring).
+
 ## Auto-advance
 
 Founder feedback: "I want automatic progress. I don't want to click on year 2."
