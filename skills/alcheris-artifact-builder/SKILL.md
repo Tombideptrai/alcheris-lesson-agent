@@ -87,6 +87,28 @@ Founder feedback on the CFA rebuild: "I need animation, don't just turn it into 
 - **Freeze animations from a step you left.** Bump a generation counter on every step change and have tweens stop when it changes, or an old animation keeps moving things in the new step. `assets/snippets/motion.js` does this.
 - Honour `prefers-reduced-motion`: jump to the end state.
 
+## Interact first: explorers
+
+Founder feedback (Linear Algebra Lesson 1, phone review): "Sometimes we need to interact first, then explain."
+
+- **An explorer is a one-scene artifact** at the top of a page's left panel: the learner acts on the visual straight away (tap a grid point and a scooter walks there step by step; drag one arrow onto another and the sum appears; drag a tip along a line and the multiplier changes). No definition card in front of it, no question; it finishes after a couple of free tries or a few visible goals, then names the pattern in one line.
+- **Build it from the same engine as the practice artifact**: let the engine map scene ids to runners (`const RUN = { dock, guess, numbers, recap }; scenes(C, C.scenes.map((s) => RUN[s.id]))`), export the explorer as a config with only the first scene, and slice that scene off the practice config, so nothing is repeated.
+
+## 3D scenes
+
+Founder feedback: "A 3D object should not be explained with just an image."
+
+- Orthographic projection in SVG with `yaw` (drag sideways) and `pitch` (drag up/down, clamp about −0.05 to 1.35), redrawn from state on every move; window-tracked pointer listeners and `touch-action: none` on the svg.
+- Depth cues are mandatory: a floor grid, colour-coded x/y/z axes with labels, the object's **shadow** on the floor and a **dashed drop line** to it. Draw far objects first.
+- On entry, a slow automatic half-turn shows it lives in 3D; a "⟲ drag to spin" hint fades after the first real drag.
+- Teach why rotation matters: start one scene in a front view where two objects overlap exactly, and only spinning separates them.
+- Moves happen one unit per step along x, then y, then z, with numbered step dots per axis.
+- Reference engine: `artifacts/linalg/games/space.js` in the lesson-maker repo.
+
+## Number inputs for vectors
+
+Founder feedback: steppers laid out in a row ("x − 2 + y − 0 + z − 0 +") "look like an equation". When the learner enters a vector, give them a **bracketed column**: one row per slot, a small − and + beside the number, and a coloured label under it (east / north / up, matching the axis colours). Put it beside the drawing on wide frames; the number pops on change. A row of steppers is fine only for a single number.
+
 ## Teach before you test
 
 Founder feedback: "I don't know what PMT is, but it is already asking me to find PMT." The definition was a small subtitle above the question, and that doesn't count.
